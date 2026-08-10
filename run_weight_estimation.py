@@ -38,7 +38,8 @@ def _print_mtow_chain(mtow_chain, decimals=3):
 
 
 if __name__ == "__main__":
-    w_ij_chain = [
+    # Flight profile
+    w_profile = [
         get_w_ij_warmup_takeoff(),
         get_w_ij_climb(),
         get_w_ij_cruise(R, c_t, M, L_D, CRUISE_ALT),
@@ -49,7 +50,7 @@ if __name__ == "__main__":
 
     mtow_chain = get_mtow(
         W_PAYLOAD,
-        w_ij_chain,
+        w_profile,
         W_EMPTY_0_INIT,
         SAFETY_FACTOR_FUEL,
         max_iters=MAX_ITERS,
