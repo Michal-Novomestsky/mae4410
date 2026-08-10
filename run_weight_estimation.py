@@ -3,9 +3,9 @@ from tools.weight_calc import get_mtow, get_w_payload, get_w_ij_climb, get_w_ij_
 from tools.constants import *
 
 # Placeholder inputs — replace with mission/aircraft values when available
-W_PAYLOAD = 5000.0  # payload + crew weight
+W_PAYLOAD = 57493  # payload + crew weight
 SAFETY_FACTOR_FUEL = 0.06 # SF on fuel weight fraction
-W_EMPTY_0_INIT = 0.55  # initial empty-weight fraction guess
+W_EMPTY_0_INIT = 0.5  # initial empty-weight fraction guess
 MAX_ITERS = 10
 
 R = 8000e3 # 8000 km

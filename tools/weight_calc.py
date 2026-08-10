@@ -43,9 +43,10 @@ def get_w_fuel_0(w_ij_chain, safety_factor):
     return (1 + safety_factor) * (1 - w_start_end)
 
 def get_w_empty_0(mtow):
-    # Placeholder empty-weight fraction until a regression is fitted
-    warnings.warn("Using constant empty-weight fraction placeholder", UserWarning)
-    return 0.55
+    # TODO add other correlations, not just Raymer
+    A = 0.97
+    C = -0.06
+    return A*mtow**C
 
 
 def mtow_iter(w_payload, w_fuel_0, w_empty_0):
@@ -67,7 +68,7 @@ def get_mtow(w_payload, w_ij_chain, w_empty_0_init, safety_factor, max_iters=10)
     # Iteratively solve
     for i in range(max_iters):
         mtow = mtow_iter(w_payload, w_fuel_0, w_empty_0)
-        eps = (mtow - mtow_prev)/mtow
+        eps = abs((mtow - mtow_prev)/mtow)
 
         w_empty_0 = get_w_empty_0(mtow)
         mtow_prev = mtow
