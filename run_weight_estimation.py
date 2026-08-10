@@ -3,7 +3,7 @@ from tools.weight_calc import get_mtow, get_w_payload, get_w_ij_climb, get_w_ij_
 from tools.constants import *
 
 # Placeholder inputs — replace with mission/aircraft values when available
-W_PAYLOAD = 57493  # payload + crew weight
+W_PAYLOAD = 57493  # Estimate from Michal's W1 work
 SAFETY_FACTOR_FUEL = 0.06 # SF on fuel weight fraction
 W_EMPTY_0_INIT = 0.5  # initial empty-weight fraction guess
 MAX_ITERS = 10
@@ -13,7 +13,7 @@ E_LOITER = 30*60 # 30 min
 c_t = 14e-6 # kg/Ns Estimate from slides
 M = 0.85
 L_D = 20 # Approximation from slides
-CRUISE_ALT = 35000 * FT2M # TODO SERVICE CEILING NOT CRUISING ALT
+CRUISE_ALT = 35000 * FT2M # NOTE SERVICE CEILING NOT CRUISING ALT - service ceiling should yield max MTOW afaik anyway
 
 
 
