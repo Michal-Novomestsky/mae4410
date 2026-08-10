@@ -2,8 +2,7 @@ import math
 import warnings
 
 from tools.isa import get_a
-
-G_GRAV = 9.81
+from tools.constants import *
 
 # TODO find the right name for this (w_payload + w_crew) - what is it? It's not OEW
 def get_w_payload(safety_factor):
@@ -52,15 +51,18 @@ def get_w_empty_0(mtow):
 def mtow_iter(w_payload, w_fuel_0, w_empty_0):
     return w_payload/(1 - w_fuel_0 - w_empty_0)
 
-def get_mtow(w_payload, w_fuel_0, w_empty_0_init, max_iters=10):
+def get_mtow(w_payload, w_ij_chain, w_empty_0_init, safety_factor, max_iters=10):
     mtow_prev = 0
     w_empty_0 = w_empty_0_init
     mtow_chain = {
         "i": [],
         "mtow": [],
         "w_empty_0": [],
+        "w_fuel_0": [],
         "eps": [],
     }
+
+    w_fuel_0 = get_w_fuel_0(w_ij_chain, safety_factor)
     
     # Iteratively solve
     for i in range(max_iters):
@@ -73,6 +75,7 @@ def get_mtow(w_payload, w_fuel_0, w_empty_0_init, max_iters=10):
         mtow_chain["i"].append(i)
         mtow_chain["mtow"].append(mtow)
         mtow_chain["w_empty_0"].append(w_empty_0)
+        mtow_chain["w_fuel_0"].append(w_fuel_0)
         mtow_chain["eps"].append(eps)
 
     return mtow_chain
