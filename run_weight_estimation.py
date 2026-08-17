@@ -2,17 +2,20 @@ from tools.constants import FT2M
 from tools.weight_calc import get_mtow, get_w_payload, get_w_ij_climb, get_w_ij_cruise, get_w_ij_descent, get_w_ij_landing, get_w_ij_loiter, get_w_ij_warmup_takeoff
 from tools.constants import *
 
-# Placeholder inputs — replace with mission/aircraft values when available
-W_PAYLOAD = 57493  # Estimate from Michal's W1 work
-SAFETY_FACTOR_FUEL = 0.06 # SF on fuel weight fraction
-W_EMPTY_0_INIT = 0.5  # initial empty-weight fraction guess
-MAX_ITERS = 10
+import warnings
 
-R = 8000e3 # 8000 km
-E_LOITER = 30*60 # 30 min
 c_t = 14e-6 # kg/Ns Estimate from slides
 M = 0.85
 L_D = 20 # Approximation from slides
+W_EMPTY_0_INIT = 0.5  # initial empty-weight fraction guess
+MAX_ITERS = 10
+
+W_PAYLOAD = 57493  # Estimate from Michal's W1 work
+SAFETY_FACTOR_FUEL = 0.05 # 5% trip fuel contingency
+R = 8000e3 # 8000 km
+E_LOITER = 30*60 # 30 min
+LOITER_ALT = 1500 * FT2M
+warnings.warn("Loiter altitude specified in RFP, but not used in endurance eqn", UserWarning)
 CRUISE_ALT = 35000 * FT2M # NOTE SERVICE CEILING NOT CRUISING ALT - service ceiling should yield max MTOW afaik anyway
 
 
@@ -56,3 +59,5 @@ if __name__ == "__main__":
         max_iters=MAX_ITERS,
     )
     _print_mtow_chain(mtow_chain)
+
+    print(f"Weight fractions: {w_profile}")
