@@ -1,0 +1,26 @@
+# CODEOWNERS template
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Each line is a file pattern followed by one or more owners.
+# Owners can be GitHub usernames, teams, or email addresses.
+# Order matters: the last matching pattern wins.
+#
+# Uncomment and edit the examples below for this repository.
+
+# Default owners for everything in the repo
+*       @Michal-Novomestsky
+*       @lukeuniwork
+*       @SasunKarunaratne
+*       @Hriday341
+
+# Owners for specific file types
+# *.py    @Michal-Novomestsky
+# *.md    @Michal-Novomestsky
+
+# Owners for specific paths
+# /tools/ @Michal-Novomestsky
+# /data/  @Michal-Novomestsky
+
+# You can also use teams (org repos) or emails
+# /docs/  @org/docs-team
+# *.go    docs@example.com
