@@ -7,7 +7,6 @@ import warnings
 c_t = 14e-6 # kg/Ns Estimate from slides
 M = 0.85
 L_D = 20 # Approximation from slides
-W_EMPTY_0_INIT = 0.5  # initial empty-weight fraction guess
 MAX_ITERS = 10
 
 W_PAYLOAD = 57493  # Estimate from Michal's W1 work
@@ -42,7 +41,7 @@ def _print_mtow_chain(mtow_chain, decimals=3):
 
 if __name__ == "__main__":
     # Flight profile
-    w_profile = [
+    w_flight_profile = [
         get_w_ij_warmup_takeoff(),
         get_w_ij_climb(),
         get_w_ij_cruise(R, c_t, M, L_D, CRUISE_ALT),
@@ -52,12 +51,11 @@ if __name__ == "__main__":
     ]  
 
     mtow_chain = get_mtow(
-        W_PAYLOAD,
-        w_profile,
-        W_EMPTY_0_INIT,
-        SAFETY_FACTOR_FUEL,
+        w_payload=W_PAYLOAD,
+        w_flight_profile=w_flight_profile,
+        safety_factor=SAFETY_FACTOR_FUEL,
         max_iters=MAX_ITERS,
     )
     _print_mtow_chain(mtow_chain)
 
-    print(f"Weight fractions: {w_profile}")
+    print(f"Weight fractions: {w_flight_profile}")
