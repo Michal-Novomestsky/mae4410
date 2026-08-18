@@ -1,9 +1,8 @@
 import math
-from multiprocessing import Value
 import warnings
 
 from tools.isa import get_a
-from tools.constants import *
+from data.constants import *
 
 def _collect_mass_entries(node, path=(), manifest=None):
     """Recursively collect component weights from mass sections."""
@@ -58,6 +57,10 @@ def get_w_ij_cruise(R, c_t, M, L_D, z):
     return math.exp(-R * G_GRAV * c_t / (V * L_D))
 
 def get_w_ij_loiter(E, c_t, L_D):
+    warnings.warn(
+        "Loiter altitude specified in RFP, but not used in endurance eqn",
+        UserWarning,
+    )
     return math.exp(-E * G_GRAV * c_t /L_D)
 
 # TODO better way to do this?
@@ -130,11 +133,7 @@ def get_mtow(w_payload, w_flight_profile, safety_factor, oew=None, w_empty_0_ini
 
     return mtow_chain
 
-def get_weight_calcs(specs, specs_path, flight_profile):
-    # TODO LOAD FROM specs
-    W_PAYLOAD = 57493  # Estimate from Michal's W1 work
-    SAFETY_FACTOR_FUEL = 0.05  # 5% trip fuel contingency
-    MAX_ITERS = 10
+def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor_fuel, max_iters=10):
 
     oew, weight_manifest = load_oew_from_specs(specs)
     if oew is None:

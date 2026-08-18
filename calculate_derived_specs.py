@@ -1,8 +1,7 @@
 import json
-import warnings
 from pathlib import Path
 
-from tools.constants import FT2M
+from data.constants import *
 from tools.weight_calc import (
     get_weight_calcs,
     get_w_ij_climb,
@@ -17,15 +16,6 @@ ROOT = Path(__file__).resolve().parent
 SPECS_PATH = ROOT / "data" / "specs.json"
 DERIVED_SPECS_PATH = ROOT / "data" / "specs_derived.json"
 
-C_T = 14e-6  # kg/Ns Estimate from slides
-M = 0.85
-L_D = 20  # Approximation from slides
-
-R = 8000e3  # 8000 km
-E_LOITER = 30 * 60  # 30 min
-LOITER_ALT = 1500 * FT2M
-CRUISE_ALT = 35000 * FT2M
-
 def calculate_derived_specs(
     specs_path=SPECS_PATH,
     out_path=DERIVED_SPECS_PATH,
@@ -33,10 +23,7 @@ def calculate_derived_specs(
     with open(specs_path) as specs_file:
         specs = json.load(specs_file)
 
-    warnings.warn(
-        "Loiter altitude specified in RFP, but not used in endurance eqn",
-        UserWarning,
-    )
+    # Run calculations
     flight_profile = [
         get_w_ij_warmup_takeoff(),
         get_w_ij_climb(),
@@ -45,9 +32,9 @@ def calculate_derived_specs(
         get_w_ij_descent(),
         get_w_ij_landing(),
     ]
-
     weight_calcs = get_weight_calcs(specs, specs_path, flight_profile)
     
+    # Write derived specs to file
     derived_specs = {
         "weight_calcs": weight_calcs
     }
