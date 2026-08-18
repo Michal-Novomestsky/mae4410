@@ -32,7 +32,14 @@ def calculate_derived_specs(
         get_w_ij_descent(),
         get_w_ij_landing(),
     ]
-    weight_calcs = get_weight_calcs(specs, specs_path, flight_profile)
+    weight_calcs = get_weight_calcs(
+        specs,
+        specs_path,
+        flight_profile,
+        W_PAYLOAD,
+        SAFETY_FACTOR_FUEL,
+        MAX_ITERS,
+    )
     
     # Write derived specs to file
     derived_specs = {
