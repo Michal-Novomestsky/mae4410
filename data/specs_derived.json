@@ -1,0 +1,18 @@
+{
+    "weight_calcs": {
+        "mtow": 272537.36354813294,
+        "w_payload": 57493,
+        "w_fuel": 80375.36354813293,
+        "oew": 134669,
+        "oew_breakdown": {
+            "fuselage": 50000,
+            "wings.main": 69669,
+            "wings.htail": 5000,
+            "wings.vtail": 5000,
+            "engines": 5000
+        },
+        "w_fuel_0": 0.2949150256013899,
+        "w_empty_0": 0.49413041297075605,
+        "eps": 0
+    }
+}

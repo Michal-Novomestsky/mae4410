@@ -1,0 +1,121 @@
+{
+    "units": {
+        "length": "mm",
+        "mass": "kg",
+        "angles": "degrees",
+        "x0": "nose",
+        "y0": "symmetry plane",
+        "z0": "fuselage center"
+    },
+    "fuselage": {
+        "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "geometry": {
+            "length": 70000,
+            "iradius": 6000,
+            "oradius": 6200
+        },
+        "mass": {
+            "weight": 50000,
+            "CG": 35000,
+            "Ixx": 0,
+            "Iyy": 0,
+            "Izz": 0
+        }
+    },
+    "wings": {
+        "main": {
+            "position": {
+                "x": 22566,
+                "y": 2200,
+                "z": -1.639
+            },
+            "geometry": {
+                "span": 64400,
+                "MAC": 7818,
+                "AR": 8.968,
+                "rchord": 12888,
+                "tchord": 1000,
+                "sweep": 32,
+                "dihedral": 6,
+                "wtspan": 2500,
+                "wtdihedral": 33.5,
+                "wtrchord": 2619
+            },
+            "mass": {
+                "weight": 69669,
+                "CG": 0,
+                "Ixx": 0,
+                "Iyy": 0,
+                "Izz": 0
+            }
+        },
+        "htail": {
+            "position": {
+                "x": 59508,
+                "y": 1300,
+                "z": 1.557
+            },
+            "geometry": {
+                "span": 20546,
+                "MAC": 4612,
+                "AR": 4.2,
+                "rchord": 6440,
+                "tchord": 2010,
+                "sweep": 35,
+                "dihedral": 5.5
+            },
+            "mass": {
+                "weight": 5000,
+                "CG": 0,
+                "Ixx": 0,
+                "Iyy": 0,
+                "Izz": 0
+            }
+        },
+        "vtail": {
+            "position": {
+                "x": 59331,
+                "y": 0,
+                "z": 2.651
+            },
+            "geometry": {
+                "span": 9152,
+                "MAC": 5788,
+                "AR": 1.7,
+                "rchord": 7800,
+                "tchord": 3100,
+                "sweep": 43,
+                "dihedral": 0
+            },
+            "mass": {
+                "weight": 5000,
+                "CG": 0,
+                "Ixx": 0,
+                "Iyy": 0,
+                "Izz": 0
+            }
+        }
+    },
+    "engines": {
+        "position": {
+            "x": 23113,
+            "y": 9300,
+            "z": -2700
+        },
+        "geometry": {
+            "length": 5600,
+            "oradius": 3.772
+        },
+        "mass": {
+            "weight": 5000,
+            "CG": 0,
+            "Ixx": 0,
+            "Iyy": 0,
+            "Izz": 0
+        }
+    }
+}
