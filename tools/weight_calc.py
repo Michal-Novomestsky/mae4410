@@ -144,12 +144,12 @@ def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor
         )
 
     mtow_chain = get_mtow(
-        w_payload=W_PAYLOAD,
+        w_payload=w_payload,
         w_flight_profile=flight_profile,
-        safety_factor=SAFETY_FACTOR_FUEL,
+        safety_factor=safety_factor_fuel,
         oew=oew,
         use_raymer=use_raymer,
-        max_iters=MAX_ITERS,
+        max_iters=max_iters,
     )
 
     weight_calcs = {
