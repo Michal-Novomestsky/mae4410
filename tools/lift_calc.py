@@ -69,7 +69,7 @@ def get_lift_calcs(specs, e, c_D0, M_max_cruise, mtow):
         "c_D0": c_D0,
         "c_L_star": get_c_L_star(AR, e, c_D0),
         "c_D_star": get_c_D_star(AR, e, c_D0),
-        "(c_L/c_D)": 0.866 * get_c_L_c_D_star(AR, e, c_D0),
+        "(c_L/c_D)_star": get_c_L_c_D_star(AR, e, c_D0),
         "V_cruise": M_max_cruise * get_a(z_cruise),
         "M_cruise": M_max_cruise,
         "cruise_alt (ft)": z_cruise / FT2M,

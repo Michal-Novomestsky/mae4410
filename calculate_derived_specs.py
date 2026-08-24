@@ -28,15 +28,18 @@ def calculate_derived_specs(
 
     # Initial guesses
     weight_calcs = {"mtow": 250e3}
-    lift_calcs = {"(c_L/c_D)": 20}
+    lift_calcs = {
+        "(c_L/c_D)_star": 20, 
+        "cruise_alt (ft)": 25e3,
+    }
 
     # Iterate onto solution (calculations are coupled)
     for _ in range(MAX_ITERS):
         flight_profile = [
             get_w_ij_warmup_takeoff(),
             get_w_ij_climb(),
-            get_w_ij_cruise(R, C_T, MAX_CRUISE_MACH, lift_calcs["(c_L/c_D)"], CRUISE_ALT),
-            get_w_ij_loiter(E_LOITER, C_T, lift_calcs["(c_L/c_D)"]),
+            get_w_ij_cruise(R, C_T, MAX_CRUISE_MACH, lift_calcs["(c_L/c_D)_star"], lift_calcs["cruise_alt (ft)"] * FT2M),
+            get_w_ij_loiter(E_LOITER, C_T, lift_calcs["(c_L/c_D)_star"]),
             get_w_ij_descent(),
             get_w_ij_landing(),
         ]

@@ -6,7 +6,6 @@ FT2M = 0.3048
 R = 8000e3  # 8000 km
 E_LOITER = 30 * 60  # 30 min
 LOITER_ALT = 1500 * FT2M
-CRUISE_ALT = 35000 * FT2M # Technically this is the service ceiling TODO rename for clarity
 SAFETY_FACTOR_FUEL = 0.05  # 5% trip fuel contingency
 MAX_CRUISE_MACH = 0.85
 
