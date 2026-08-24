@@ -20,7 +20,8 @@
         },
         "mass": {
             "weight": 61916,
-            "CG": 35000,
+            "CGx": 35000,
+            "CGz": 0,
             "Ixx": 0,
             "Iyy": 0,
             "Izz": 0
@@ -46,8 +47,9 @@
                 "wtrchord": 2619
             },
             "mass": {
-                "weight": 69669,
-                "CG": 0,
+                "weight": 12118,
+                "CGx": 33781.82,
+                "CGz": -339.02,
                 "Ixx": 0,
                 "Iyy": 0,
                 "Izz": 0
@@ -69,8 +71,9 @@
                 "dihedral": 5.5
             },
             "mass": {
-                "weight": 5000,
-                "CG": 0,
+                "weight": 3063,
+                "CGx": 64334.24,
+                "CGz": 1910,
                 "Ixx": 0,
                 "Iyy": 0,
                 "Izz": 0
@@ -92,8 +95,9 @@
                 "dihedral": 0
             },
             "mass": {
-                "weight": 5000,
-                "CG": 0,
+                "weight": 1397.5,
+                "CGx": 65775.5,
+                "CGz": 6489.7,
                 "Ixx": 0,
                 "Iyy": 0,
                 "Izz": 0
