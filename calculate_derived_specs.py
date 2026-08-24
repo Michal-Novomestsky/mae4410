@@ -5,12 +5,14 @@ from pathlib import Path
 from data.constants import *
 from tools.weight_calc import (
     get_weight_calcs,
+    get_w_ij_warmup,
+    get_w_ij_taxi,
+    get_w_ij_takeoff,
     get_w_ij_climb,
     get_w_ij_cruise,
-    get_w_ij_descent,
-    get_w_ij_landing,
     get_w_ij_loiter,
-    get_w_ij_warmup_takeoff,
+    get_w_ij_descent,
+    get_w_ij_landing_shutdown,
 )
 from tools.lift_calc import get_lift_calcs
 
@@ -36,12 +38,14 @@ def calculate_derived_specs(
     # Iterate onto solution (calculations are coupled)
     for _ in range(MAX_ITERS):
         flight_profile = [
-            get_w_ij_warmup_takeoff(),
-            get_w_ij_climb(),
-            get_w_ij_cruise(R, C_T, MAX_CRUISE_MACH, lift_calcs["(c_L/c_D)_star"], lift_calcs["cruise_alt (ft)"] * FT2M),
-            get_w_ij_loiter(E_LOITER, C_T, lift_calcs["(c_L/c_D)_star"]),
-            get_w_ij_descent(),
-            get_w_ij_landing(),
+            ("warmup", get_w_ij_warmup()),
+            ("taxi", get_w_ij_taxi()),
+            ("takeoff", get_w_ij_takeoff()),
+            ("climb", get_w_ij_climb()),
+            ("cruise", get_w_ij_cruise(R, C_T, MAX_CRUISE_MACH, lift_calcs["(c_L/c_D)_star"], lift_calcs["cruise_alt (ft)"] * FT2M)),
+            ("loiter", get_w_ij_loiter(E_LOITER, C_T, lift_calcs["(c_L/c_D)_star"])),
+            ("descent", get_w_ij_descent()),
+            ("landing and shutdown", get_w_ij_landing_shutdown()),
         ]
 
         weight_calcs = get_weight_calcs(

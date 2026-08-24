@@ -29,23 +29,18 @@ def load_oew_from_specs(specs):
         return None, {}
     return sum(weight_manifest.values()), weight_manifest
 
-# TODO find the right name for this (w_payload + w_crew) - what is it? It's not OEW
-def get_w_payload(safety_factor):
-    raise NotImplementedError
+# J. Roskam, Airplane Design: Preliminary sizing of airplanes, DARCorporation, 1985.
+def get_w_ij_warmup():
+    return 0.990
 
-# TODO Should this just be a const instead?
-def get_w_ij_warmup_takeoff():
-    return 0.970
+def get_w_ij_taxi():
+    return 0.990
+
+def get_w_ij_takeoff():
+    return 0.995
 
 def get_w_ij_climb():
-    return 0.985
-
-def get_w_ij_descent():
-    warnings.warn("Assuming descent fuel consumption equal to climb", UserWarning)
-    return get_w_ij_climb()
-
-def get_w_ij_landing():
-    return 0.995
+    return 0.980
 
 def get_w_ij_cruise(R, c_t, M, L_D, z):
     a = get_a(z)
@@ -57,13 +52,26 @@ def get_w_ij_cruise(R, c_t, M, L_D, z):
 def get_w_ij_loiter(E, c_t, L_D):
     return math.exp(-E * G_GRAV * c_t /L_D)
 
-# TODO better way to do this?
+def get_w_ij_descent():
+    return 0.990
+
+def get_w_ij_landing_shutdown():
+    return 0.992
+
 def get_w_fuel_0(w_flight_profile, safety_factor):
     w_start_end = 1
     for w_i_j in w_flight_profile:
-        w_start_end *= w_i_j
+        w_start_end *= w_i_j[1]
 
     return (1 + safety_factor) * (1 - w_start_end)
+
+def get_flight_weights(w_flight_profile, mtow):
+    weights = [mtow]
+    for w_i_j in w_flight_profile:
+        w_prev = weights[-1]
+        weights.append(w_prev * w_i_j[1])
+
+    return weights[1:] # Chop out initial value (MTOW)
 
 def get_w_empty_0(mtow):
     # TODO add other correlations, not just Raymer
@@ -132,8 +140,7 @@ def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor
     oew, weight_manifest = load_oew_from_specs(specs)
     if oew is None:
         warnings.warn(
-            f"No mass entries found in {specs_path}; "
-            "falling back to iterative OEW solution",
+            f"No OEW entries found in specs.json. Falling back to iterative Raymer solution",
             UserWarning,
         )
 
@@ -146,6 +153,8 @@ def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor
         max_iters=max_iters,
     )
 
+    flight_weights = get_flight_weights(flight_profile, mtow_chain["mtow"][-1])
+
     weight_calcs = {
         "mtow": mtow_chain["mtow"][-1],
         "w_payload": mtow_chain["w_payload"][-1],
@@ -154,6 +163,7 @@ def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor
         "w_fuel_0": mtow_chain["w_fuel_0"][-1],
         "w_empty_0": mtow_chain["w_empty_0"][-1],
         "eps": mtow_chain["eps"][-1],
+        "flight_breakdown": {flight_profile[i][0]: flight_weights[i] for i in range(len(flight_profile))}
     }
 
     if not use_raymer:
