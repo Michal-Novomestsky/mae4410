@@ -1,4 +1,5 @@
 import json
+import argparse
 from pathlib import Path
 
 from data.constants import *
@@ -19,6 +20,7 @@ DERIVED_SPECS_PATH = ROOT / "data" / "specs_derived.json"
 def calculate_derived_specs(
     specs_path=SPECS_PATH,
     out_path=DERIVED_SPECS_PATH,
+    use_raymer=False,
 ):
     with open(specs_path) as specs_file:
         specs = json.load(specs_file)
@@ -38,6 +40,7 @@ def calculate_derived_specs(
         flight_profile,
         W_PAYLOAD,
         SAFETY_FACTOR_FUEL,
+        use_raymer,
         MAX_ITERS,
     )
     
@@ -54,6 +57,15 @@ def calculate_derived_specs(
 
 
 if __name__ == "__main__":
-    derived_specs = calculate_derived_specs()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--use-raymer", action="store_true", default=False)
+    args = parser.parse_args()
+
+    derived_specs = calculate_derived_specs(
+        specs_path=SPECS_PATH,
+        out_path=DERIVED_SPECS_PATH,
+        use_raymer=args.use_raymer,
+    )
+
     print(json.dumps(derived_specs, indent=4))
     print(f"Wrote {DERIVED_SPECS_PATH}")

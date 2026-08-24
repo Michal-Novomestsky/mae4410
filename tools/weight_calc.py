@@ -84,7 +84,7 @@ def mtow_iter(w_payload, w_fuel_0, w_empty_0=None, oew=None):
         raise ValueError(f"OEW not None ({round(oew, 2)} and empty weight fraction not None ({round(w_empty_0, 2)}. Specify one or the other.")
     return (w_payload + oew)/(1 - w_fuel_0) 
 
-def get_mtow(w_payload, w_flight_profile, safety_factor, oew=None, w_empty_0_init=0.5, max_iters=10):
+def get_mtow(w_payload, w_flight_profile, safety_factor, oew=None, use_raymer=False, w_empty_0_init=0.5, max_iters=10):
     mtow_chain = {
         "i": [],
         "mtow": [],
@@ -99,7 +99,7 @@ def get_mtow(w_payload, w_flight_profile, safety_factor, oew=None, w_empty_0_ini
     w_fuel_0 = get_w_fuel_0(w_flight_profile, safety_factor)
     
     # Iteratively solve for OEW using Raymer
-    if oew is None:
+    if use_raymer or oew is None:
         mtow_prev = 0
         w_empty_0 = w_empty_0_init
         
@@ -133,7 +133,7 @@ def get_mtow(w_payload, w_flight_profile, safety_factor, oew=None, w_empty_0_ini
 
     return mtow_chain
 
-def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor_fuel, max_iters=10):
+def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor_fuel, use_raymer=False, max_iters=10):
 
     oew, weight_manifest = load_oew_from_specs(specs)
     if oew is None:
@@ -148,6 +148,7 @@ def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor
         w_flight_profile=flight_profile,
         safety_factor=SAFETY_FACTOR_FUEL,
         oew=oew,
+        use_raymer=use_raymer,
         max_iters=MAX_ITERS,
     )
 
@@ -156,10 +157,12 @@ def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor
         "w_payload": mtow_chain["w_payload"][-1],
         "w_fuel": mtow_chain["w_fuel"][-1],
         "oew": mtow_chain["oew"][-1],
-        "oew_breakdown": weight_manifest,
         "w_fuel_0": mtow_chain["w_fuel_0"][-1],
         "w_empty_0": mtow_chain["w_empty_0"][-1],
         "eps": mtow_chain["eps"][-1],
     }
+
+    if not use_raymer:
+        weight_calcs["oew_breakdown"] = weight_manifest
 
     return weight_calcs
