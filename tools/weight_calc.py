@@ -50,17 +50,11 @@ def get_w_ij_landing():
 def get_w_ij_cruise(R, c_t, M, L_D, z):
     a = get_a(z)
     V = M * a
-
-    warnings.warn("Assuming plane cruising at 0.866(L/D)", UserWarning)
     L_D *= 0.866
 
     return math.exp(-R * G_GRAV * c_t / (V * L_D))
 
 def get_w_ij_loiter(E, c_t, L_D):
-    warnings.warn(
-        "Loiter altitude specified in RFP, but not used in endurance eqn",
-        UserWarning,
-    )
     return math.exp(-E * G_GRAV * c_t /L_D)
 
 # TODO better way to do this?
@@ -144,12 +138,12 @@ def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor
         )
 
     mtow_chain = get_mtow(
-        w_payload=W_PAYLOAD,
+        w_payload=w_payload,
         w_flight_profile=flight_profile,
-        safety_factor=SAFETY_FACTOR_FUEL,
+        safety_factor=safety_factor_fuel,
         oew=oew,
         use_raymer=use_raymer,
-        max_iters=MAX_ITERS,
+        max_iters=max_iters,
     )
 
     weight_calcs = {
