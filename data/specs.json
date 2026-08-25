@@ -46,7 +46,7 @@
                 "wtrchord": 2619
             },
             "mass": {
-                "weight": 69669,
+                "weight": 15000,
                 "CG": 0,
                 "Ixx": 0,
                 "Iyy": 0,
@@ -69,7 +69,7 @@
                 "dihedral": 5.5
             },
             "mass": {
-                "weight": 5000,
+                "weight": 3000,
                 "CG": 0,
                 "Ixx": 0,
                 "Iyy": 0,
@@ -92,7 +92,7 @@
                 "dihedral": 0
             },
             "mass": {
-                "weight": 5000,
+                "weight": 1500,
                 "CG": 0,
                 "Ixx": 0,
                 "Iyy": 0,
@@ -111,7 +111,7 @@
             "oradius": 3.772
         },
         "mass": {
-            "weight": 5000,
+            "weight": 8000,
             "CG": 0,
             "Ixx": 0,
             "Iyy": 0,
