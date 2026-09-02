@@ -19,7 +19,7 @@
             "oradius": 6200
         },
         "mass": {
-            "weight": 62409.42,
+            "weight": 62955.3,
             "CG": 35000,
             "Ixx": 0,
             "Iyy": 0,
@@ -111,7 +111,7 @@
             "oradius": 3.772
         },
         "mass": {
-            "weight": 8000,
+            "weight": 16000,
             "CG": 0,
             "Ixx": 0,
             "Iyy": 0,
