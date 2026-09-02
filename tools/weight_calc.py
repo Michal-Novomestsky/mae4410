@@ -163,7 +163,10 @@ def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor
         "w_fuel_0": mtow_chain["w_fuel_0"][-1],
         "w_empty_0": mtow_chain["w_empty_0"][-1],
         "eps": mtow_chain["eps"][-1],
-        "flight_breakdown": {flight_profile[i][0]: flight_weights[i] for i in range(len(flight_profile))}
+        "flight_breakdown": {
+                               "weights": {flight_profile[i][0]: flight_weights[i] for i in range(len(flight_profile))},
+                               "weight_fractions": {flight_profile[i][0]: flight_profile[i][1] for i in range(len(flight_profile))}
+        }
     }
 
     if not use_raymer:
