@@ -1,0 +1,330 @@
+from __future__ import annotations
+import math
+import pandas as pd
+from IPython.display import display
+
+# Conversions / constants
+FT_TO_M = 0.3048
+LBF_TO_N = 4.448
+G0 = 9.81
+R_AIR = 287.05287
+GAMMA_AIR = 1.4
+TSFC_TO_MG_N_S = 28.33
+
+# Aircraft values
+NUM_ENGINES = 2
+MTOW_KG = 260707.96434765024
+CRUISE_ALTITUDE_FT = 31095.700373091182
+CRUISE_MACH = 0.85
+
+# From aerodynamic/performance analysis
+REQUIRED_CRUISE_THRUST_TOTAL_KN = 199.69499285702003
+
+# Fuel allocation
+FUEL_CAPACITY_KG = 82856.66434765025
+FUEL_DENSITY_KG_M3 = 771.6
+
+# Rolls-Royce published values
+
+UF80_THRUST_LBF = 85000.0
+UF80_FAN_DIAMETER_IN = 140.0
+UF80_GEARBOX_MW = 50.0
+UF80_GEARBOX_TEST_MW = 64.0
+BYPASS_RATIO = 14.0
+OVERALL_PRESSURE_RATIO = 70.0
+ENGINE_DRY_MASS_KG = 8000.0
+
+# Installation geometry
+NACELLE_DIAMETER_FACTOR = 1.221389201349831
+ENGINE_LATERAL_OFFSET_M = 9.3
+
+# Generic preliminary cruise TSFC used for sizing
+CRUISE_TSFC_LBM_LBF_HR = 0.5
+
+# Thrust-lapse parameters
+# Max-continuous climb thrust fraction
+# From week 5 notes: ~90-95% of take-off thrust. Taking lower limit
+A0_CLIMB = 0.90
+
+# Density-ratio exponent
+A_LAPSE = 0.60
+
+# Conversions
+def ft_to_m(value_ft: float) -> float:
+    return value_ft * FT_TO_M
+
+
+def lbf_to_n(value_lbf: float) -> float:
+    return value_lbf * LBF_TO_N
+
+
+def inch_to_m(value_in: float) -> float:
+    return value_in * 0.0254
+
+
+def tsfc_mg_n_s(value_lbm_lbf_hr: float) -> float:
+    return value_lbm_lbf_hr * TSFC_TO_MG_N_S
+
+
+def mattingly_a0(mach: float) -> float:
+    """
+    Preliminary sea-level coefficient for a high-bypass turbofan.
+
+    A0 = 0.568 + 0.25(1.2 - M)^3
+    """
+    if not 0.0 <= mach < 0.9:
+        raise ValueError("This preliminary correlation requires 0 <= Mach < 0.9.")
+    return 0.568 + 0.25 * (1.2 - mach) ** 3
+
+
+def isa_troposphere(altitude_ft: float) -> dict:
+    """
+    Compact ISA calculation for the troposphere (0-11 km).
+
+    Only atmospheric quantities needed for propulsion thrust lapse are
+    returned. Current cruise altitude is within this region.
+    """
+    h = ft_to_m(altitude_ft)
+
+    if not 0.0 <= h <= 11000.0:
+        raise ValueError("isa_troposphere() is limited to 0-11 km.")
+
+    T0 = 288.15
+    P0 = 101325.0
+    L = 0.0065
+
+    T = T0 - L * h
+    exponent = 9.80665 / (R_AIR * L)
+    P = P0 * (T / T0) ** exponent
+    rho = P / (R_AIR * T)
+    a = math.sqrt(GAMMA_AIR * R_AIR * T)
+
+    return {
+        "temperature_K": T,
+        "pressure_Pa": P,
+        "density_kg_m3": rho,
+        "speed_of_sound_m_s": a,
+    }
+
+
+def show(title: str, rows: list[tuple[str, float | str, str]]):
+    df = pd.DataFrame(rows, columns=["Quantity", "Value", "Unit"])
+
+    if not df.empty:
+        numeric = pd.to_numeric(df["Value"], errors="coerce")
+        df.loc[numeric.notna(), "Value"] = numeric[numeric.notna()].map(
+            lambda x: f"{x:,.3f}" if abs(x) >= 100 else f"{x:.4f}"
+        )
+
+    print(title)
+    display(df)
+    return df
+
+
+# Prop calculations
+def main():
+    # Engine geometry / rating
+    thrust_engine_sl_n = lbf_to_n(UF80_THRUST_LBF)
+    thrust_total_sl_n = NUM_ENGINES * thrust_engine_sl_n
+    fan_diameter_m = inch_to_m(UF80_FAN_DIAMETER_IN)
+    nacelle_diameter_m = NACELLE_DIAMETER_FACTOR * fan_diameter_m
+    total_engine_dry_mass_kg = NUM_ENGINES * ENGINE_DRY_MASS_KG
+
+    # Static aircraft thrust-to-weight ratio
+    mtow_weight_n = MTOW_KG * G0
+    static_tw = thrust_total_sl_n / mtow_weight_n
+
+    # Climb thrust
+    max_cont_climb_thrust_engine_n = A0_CLIMB * thrust_engine_sl_n
+    max_cont_climb_thrust_total_n = NUM_ENGINES * max_cont_climb_thrust_engine_n
+
+    # Cruise atmospheric condition and thrust lapse
+    sea_level = isa_troposphere(0.0)
+    cruise_atm = isa_troposphere(CRUISE_ALTITUDE_FT)
+
+    rho_sl = sea_level["density_kg_m3"]
+    rho_cruise = cruise_atm["density_kg_m3"]
+    sigma_cruise = rho_cruise / rho_sl
+
+    A0_CRUISE = mattingly_a0(CRUISE_MACH)
+
+    cruise_thrust_lapse = A0_CRUISE * sigma_cruise ** A_LAPSE
+
+    thrust_available_engine_cruise_n = (
+        thrust_engine_sl_n * cruise_thrust_lapse
+    )
+    thrust_available_total_cruise_n = (
+        NUM_ENGINES * thrust_available_engine_cruise_n
+    )
+
+    # Cruise thrust requirement
+    thrust_required_total_cruise_n = REQUIRED_CRUISE_THRUST_TOTAL_KN * 1000.0
+    thrust_required_engine_cruise_n = (
+        thrust_required_total_cruise_n / NUM_ENGINES
+    )
+
+    cruise_thrust_margin_n = (
+        thrust_available_total_cruise_n - thrust_required_total_cruise_n
+    )
+
+    required_fraction_sls = (
+        thrust_required_engine_cruise_n / thrust_engine_sl_n
+    )
+
+    required_fraction_available = (
+        thrust_required_engine_cruise_n / thrust_available_engine_cruise_n
+    )
+
+    # Fuel / TSFC
+    tsfc_mg = tsfc_mg_n_s(CRUISE_TSFC_LBM_LBF_HR)
+    tsfc_kg_n_s = tsfc_mg * 1e-6
+
+    cruise_fuel_flow_total_kg_s = (
+        tsfc_kg_n_s * thrust_required_total_cruise_n
+    )
+    cruise_fuel_flow_total_kg_hr = (
+        cruise_fuel_flow_total_kg_s * 3600.0
+    )
+
+    cruise_fuel_flow_engine_kg_hr = (
+        cruise_fuel_flow_total_kg_hr / NUM_ENGINES
+    )
+
+    fuel_volume_m3 = FUEL_CAPACITY_KG / FUEL_DENSITY_KG_M3
+
+    # One-engine-inoperative (OEI) static quantities
+    oei_static_thrust_n = (
+        (NUM_ENGINES - 1) * thrust_engine_sl_n
+    )
+
+    oei_static_tw = oei_static_thrust_n / mtow_weight_n
+
+    single_engine_yaw_moment_nm = (
+        thrust_engine_sl_n * ENGINE_LATERAL_OFFSET_M
+    )
+
+    # OUTPUTS
+    engine_df = show("ENGINE / INSTALLATION", [
+        ("Number of engines", NUM_ENGINES, ""),
+        ("Rated SLS thrust / engine", thrust_engine_sl_n / 1000.0, "kN"),
+        ("Total rated SLS thrust", thrust_total_sl_n / 1000.0, "kN"),
+        ("Fan diameter", fan_diameter_m, "m"),
+        ("Estimated nacelle diameter", nacelle_diameter_m, "m"),
+        ("Estimated dry mass / engine", ENGINE_DRY_MASS_KG, "kg"),
+        ("Estimated total engine dry mass", total_engine_dry_mass_kg, "kg"),
+        ("Bypass ratio used", BYPASS_RATIO, ""),
+        ("Overall pressure ratio used", OVERALL_PRESSURE_RATIO, ""),
+        ("Gearbox nominal power", UF80_GEARBOX_MW, "MW"),
+        ("Gearbox test achievement", UF80_GEARBOX_TEST_MW, "MW"),
+        ("Engine lateral offset", ENGINE_LATERAL_OFFSET_M, "m"),
+    ])
+
+    thrust_df = show("THRUST / ENGINE SIZING", [
+        ("Aircraft MTOW", MTOW_KG, "kg"),
+        ("Static aircraft T/W at MTOW", static_tw, ""),
+        ("A0_CRUISE", A0_CRUISE, ""),
+        ("A0_CLIMB", A0_CLIMB, ""),
+        ("A_LAPSE", A_LAPSE, ""),
+        (
+            "Max-continuous climb thrust / engine at SLS",
+            max_cont_climb_thrust_engine_n / 1000.0,
+            "kN",
+        ),
+        (
+            "Max-continuous climb thrust total at SLS",
+            max_cont_climb_thrust_total_n / 1000.0,
+            "kN",
+        ),
+        ("Cruise altitude", CRUISE_ALTITUDE_FT, "ft"),
+        ("Cruise Mach", CRUISE_MACH, ""),
+        ("Cruise air density", rho_cruise, "kg/m^3"),
+        ("Cruise density ratio sigma", sigma_cruise, ""),
+        ("Cruise thrust-lapse ratio", cruise_thrust_lapse, ""),
+        (
+            "Available cruise thrust / engine",
+            thrust_available_engine_cruise_n / 1000.0,
+            "kN",
+        ),
+        (
+            "Available total cruise thrust",
+            thrust_available_total_cruise_n / 1000.0,
+            "kN",
+        ),
+        (
+            "Required cruise thrust / engine",
+            thrust_required_engine_cruise_n / 1000.0,
+            "kN",
+        ),
+        (
+            "Required total cruise thrust",
+            thrust_required_total_cruise_n / 1000.0,
+            "kN",
+        ),
+        (
+            "Total cruise thrust margin",
+            cruise_thrust_margin_n / 1000.0,
+            "kN",
+        ),
+        (
+            "Required thrust / SLS rating",
+            100.0 * required_fraction_sls,
+            "%",
+        ),
+        (
+            "Required / available cruise thrust",
+            100.0 * required_fraction_available,
+            "%",
+        ),
+        (
+            "Cruise thrust requirement source",
+            "INPUT FROM AERODYNAMIC/PERFORMANCE ANALYSIS",
+            "",
+        ),
+    ])
+
+    fuel_df = show("FUEL / TSFC", [
+        (
+            "Generic cruise TSFC",
+            CRUISE_TSFC_LBM_LBF_HR,
+            "lbm/(lbf*h)",
+        ),
+        ("Generic cruise TSFC", tsfc_mg, "mg/(N*s)"),
+        (
+            "Cruise fuel flow / engine",
+            cruise_fuel_flow_engine_kg_hr,
+            "kg/h",
+        ),
+        (
+            "Total cruise fuel flow",
+            cruise_fuel_flow_total_kg_hr,
+            "kg/h",
+        ),
+        ("Fuel allocation", FUEL_CAPACITY_KG, "kg"),
+        ("Selected SAF density", FUEL_DENSITY_KG_M3, "kg/m^3"),
+        ("Required fuel volume", fuel_volume_m3, "m^3"),
+    ])
+
+    oei_df = show("OEI / ASYMMETRIC THRUST", [
+        (
+            "Static thrust with one engine inoperative",
+            oei_static_thrust_n / 1000.0,
+            "kN",
+        ),
+        ("Static OEI T/W at MTOW", oei_static_tw, ""),
+        (
+            "Static single-engine yawing moment",
+            single_engine_yaw_moment_nm / 1e6,
+            "MN*m",
+        ),
+    ])
+
+    return {
+        "engine": engine_df,
+        "thrust": thrust_df,
+        "fuel": fuel_df,
+        "oei": oei_df,
+    }
+
+
+if __name__ == "__main__":
+    tables = main()
