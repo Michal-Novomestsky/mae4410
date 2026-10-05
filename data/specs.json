@@ -8,24 +8,34 @@
         "z0": "fuselage center"
     },
     "fuselage": {
-        "position": {
-            "x": 0,
-            "y": 0,
-            "z": 0
+        "main": {
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "geometry": {
+                "length": 73000,
+                "iradius": 6000,
+                "oradius": 6200
+            },
+            "mass": {
+                "weight": 62955.3,
+                "CGx": 35000,
+                "CGy": 0,
+                "CGz": 0,
+                "Ixx": 0,
+                "Iyy": 0,
+                "Izz": 0
+            }
         },
-        "geometry": {
-            "length": 73000,
-            "iradius": 6000,
-            "oradius": 6200
-        },
-        "mass": {
-            "weight": 62955.3,
-            "CGx": 35000,
-            "CGy": 0,
-            "CGz": 0,
-            "Ixx": 0,
-            "Iyy": 0,
-            "Izz": 0
+        "payload": {
+            "mass": {
+                "weight": 79396,
+                "CGx": 35000,
+                "CGy": 0,
+                "CGz": 0
+            }
         }
     },
     "wings": {
@@ -45,7 +55,8 @@
                 "dihedral": 6,
                 "wtspan": 2330,
                 "wtdihedral": 33.5,
-                "wtrchord": 2400
+                "wtrchord": 2400,
+                "NP": 37630
             },
             "mass": {
                 "weight": 15000,
@@ -128,9 +139,9 @@
         },
         "mass": {
             "weight": 16000,
-            "CGx": 0,
+            "CGx": 36223,
             "CGy": 0,
-            "CGz": 0,
+            "CGz": -884,
             "Ixx": 0,
             "Iyy": 0,
             "Izz": 0

@@ -13,7 +13,9 @@ from tools.weight_calc import (
     get_w_ij_loiter,
     get_w_ij_descent,
     get_w_ij_landing_shutdown,
+    load_payload_weight_from_specs,
     write_payload_range_diagram,
+    write_weight_balance_diagram,
 )
 from tools.lift_calc import get_lift_calcs
 
@@ -21,16 +23,20 @@ ROOT = Path(__file__).resolve().parent
 SPECS_PATH = ROOT / "data" / "specs.json"
 DERIVED_SPECS_PATH = ROOT / "data" / "specs_derived.json"
 PAYLOAD_RANGE_PATH = ROOT / "data" / "payload_range.png"
+WEIGHT_BALANCE_PATH = ROOT / "data" / "weight_balance.png"
 
 
 def calculate_derived_specs(
     specs_path=SPECS_PATH,
     out_path=DERIVED_SPECS_PATH,
     payload_range_path=PAYLOAD_RANGE_PATH,
+    weight_balance_path=WEIGHT_BALANCE_PATH,
     use_raymer=False,
 ):
     with open(specs_path) as specs_file:
         specs = json.load(specs_file)
+
+    w_payload = load_payload_weight_from_specs(specs)
 
     # Initial guesses
     weight_calcs = {"mtow": 250e3}
@@ -56,7 +62,7 @@ def calculate_derived_specs(
             specs,
             specs_path,
             flight_profile,
-            W_PAYLOAD,
+            w_payload,
             SAFETY_FACTOR_FUEL,
             use_raymer,
             MAX_ITERS,
@@ -77,12 +83,19 @@ def calculate_derived_specs(
         w_fuel_max=w_fuel_max,
         out_path=payload_range_path,
     )
+    weight_balance = write_weight_balance_diagram(
+        specs,
+        weight_calcs,
+        w_fuel_max=w_fuel_max,
+        out_path=weight_balance_path,
+    )
 
     # Write derived specs to file
     derived_specs = {
         "weight_calcs": weight_calcs,
         "lift_calcs": lift_calcs,
         "payload_range": payload_range,
+        "weight_balance": weight_balance,
     }
 
     with open(out_path, "w") as derived_specs_file:
@@ -106,3 +119,4 @@ if __name__ == "__main__":
     print(json.dumps(derived_specs, indent=4))
     print(f"Wrote {DERIVED_SPECS_PATH}")
     print(f"Wrote {derived_specs['payload_range']['path']}")
+    print(f"Wrote {derived_specs['weight_balance']['path']}")

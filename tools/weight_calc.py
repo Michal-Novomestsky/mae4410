@@ -11,6 +11,9 @@ from data.constants import *
 # V_cruise already embeds the 1.316 V*/V cruise-altitude choice from get_lift_calcs.
 CRUISE_LD_FACTOR = 0.866
 
+# Variable loads: CG stations only; mass applied via w_fuel / w_payload args.
+VARIABLE_MASS_COMPONENTS = frozenset({"wings.ftank", "fuselage.payload"})
+
 def _collect_mass_entries(node, path=(), manifest=None):
     """Recursively collect mass section fields (weight, CGx/y/z) from specs."""
     if manifest is None:
@@ -37,19 +40,44 @@ def _collect_mass_entries(node, path=(), manifest=None):
     return manifest
 
 def load_oew_from_specs(specs):
-    """Return the summed OEW and component weight manifest."""
+    """Return the summed OEW and component weight manifest (excludes payload/fuel)."""
     mass_manifest = _collect_mass_entries(specs)
     weight_manifest = {
         component: entry["weight"]
         for component, entry in mass_manifest.items()
-        if "weight" in entry
+        if "weight" in entry and component not in VARIABLE_MASS_COMPONENTS
     }
     if not weight_manifest:
         return None, {}
     return sum(weight_manifest.values()), weight_manifest
 
-def get_cg(specs, w_fuel=0.0):
-    """Mass-weighted CG from OEW components, with fuel placed at wings.ftank."""
+def load_payload_weight_from_specs(specs):
+    """Design payload mass from fuselage.payload."""
+    mass_manifest = _collect_mass_entries(specs)
+    payload = mass_manifest.get("fuselage.payload")
+    if payload is None or "weight" not in payload:
+        raise ValueError("fuselage.payload.mass.weight is missing from specs")
+    return payload["weight"]
+
+def _add_variable_mass(moment, total_mass, mass_manifest, component, weight, cg_axes):
+    """Add a variable load (fuel/payload) at its CG station."""
+    if not weight:
+        return total_mass
+    entry = mass_manifest.get(component)
+    if entry is None:
+        raise ValueError(f"{component} mass entry is missing from specs")
+    missing = [axis for axis in cg_axes if axis not in entry]
+    if missing:
+        raise ValueError(
+            f"{component} is missing required CG fields: {', '.join(missing)}"
+        )
+    total_mass += weight
+    for axis in cg_axes:
+        moment[axis] += weight * entry[axis]
+    return total_mass
+
+def get_cg(specs, w_fuel=0.0, w_payload=0.0):
+    """Mass-weighted CG from OEW components plus optional fuel and payload."""
     mass_manifest = _collect_mass_entries(specs)
     cg_axes = ("CGx", "CGy", "CGz")
 
@@ -57,8 +85,8 @@ def get_cg(specs, w_fuel=0.0):
     total_mass = 0.0
 
     for component, entry in mass_manifest.items():
-        # Fuel tank is CG-only; its mass is applied later via w_fuel.
-        if component == "wings.ftank":
+        # Fuel/payload are CG stations only; mass applied via args below.
+        if component in VARIABLE_MASS_COMPONENTS:
             continue
 
         missing = [field for field in ("weight", *cg_axes) if field not in entry]
@@ -72,18 +100,12 @@ def get_cg(specs, w_fuel=0.0):
         for axis in cg_axes:
             moment[axis] += weight * entry[axis]
 
-    if w_fuel:
-        ftank = mass_manifest.get("wings.ftank")
-        if ftank is None:
-            raise ValueError("w_fuel > 0 but wings.ftank mass entry is missing from specs")
-        missing = [axis for axis in cg_axes if axis not in ftank]
-        if missing:
-            raise ValueError(
-                f"wings.ftank is missing required CG fields: {', '.join(missing)}"
-            )
-        total_mass += w_fuel
-        for axis in cg_axes:
-            moment[axis] += w_fuel * ftank[axis]
+    total_mass = _add_variable_mass(
+        moment, total_mass, mass_manifest, "wings.ftank", w_fuel, cg_axes
+    )
+    total_mass = _add_variable_mass(
+        moment, total_mass, mass_manifest, "fuselage.payload", w_payload, cg_axes
+    )
 
     if total_mass == 0:
         raise ValueError("No mass contributions available to compute CG")
@@ -215,7 +237,11 @@ def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor
     )
 
     flight_weights = get_flight_weights(flight_profile, mtow_chain["mtow"][-1])
-    cg = get_cg(specs, w_fuel=mtow_chain["w_fuel"][-1])
+    cg = get_cg(
+        specs,
+        w_fuel=mtow_chain["w_fuel"][-1],
+        w_payload=mtow_chain["w_payload"][-1],
+    )
 
     weight_calcs = {
         "CGx": cg["CGx"],
@@ -276,12 +302,14 @@ def write_payload_range_diagram(
     lift_calcs,
     w_fuel_max,
     out_path,
-    w_payload_design=W_PAYLOAD,
+    w_payload_design=None,
     safety_factor=SAFETY_FACTOR_FUEL,
 ):
     mtow = weight_calcs["mtow"]
     oew = weight_calcs["oew"]
     w_fuel = weight_calcs["w_fuel"]
+    if w_payload_design is None:
+        w_payload_design = weight_calcs["w_payload"]
     weight_fractions = weight_calcs["flight_breakdown"]["weight_fractions"]
 
     if w_fuel > w_fuel_max:
@@ -416,5 +444,184 @@ def write_payload_range_diagram(
             {"label": lab, "range_km": r_km, "payload_t": p_t}
             for lab, r_km, p_t in zip(labels, ranges_km, payloads_t)
         ],
+        "path": str(out_path),
+    }
+
+
+def _cg_limits_m(np_mm, mac_mm, sm_min=SM_MIN, sm_max=SM_MAX):
+    """Forward/aft CG limits [m] from NP and static-margin band."""
+    x_fwd_m = (np_mm - sm_max * mac_mm) * 1e-3
+    x_aft_m = (np_mm - sm_min * mac_mm) * 1e-3
+    return x_fwd_m, x_aft_m
+
+
+def write_weight_balance_diagram(
+    specs,
+    weight_calcs,
+    w_fuel_max,
+    out_path,
+    sm_min=SM_MIN,
+    sm_max=SM_MAX,
+):
+    """
+    Weight–CG diagram: SM envelope [OEW, MTOW] plus loading vertices.
+
+    CG axis in metres from nose; weight axis in tonnes.
+    """
+    mtow = weight_calcs["mtow"]
+    oew = weight_calcs["oew"]
+    w_payload = weight_calcs["w_payload"]
+    w_fuel = weight_calcs["w_fuel"]
+
+    wing_geom = specs["wings"]["main"]["geometry"]
+    np_mm = wing_geom["NP"]
+    mac_mm = wing_geom["MAC"]
+    x_fwd_m, x_aft_m = _cg_limits_m(np_mm, mac_mm, sm_min=sm_min, sm_max=sm_max)
+
+    w_payload_full_tanks = mtow - oew - w_fuel_max
+    if w_payload_full_tanks < 0:
+        raise ValueError(
+            f"Full tanks ({w_fuel_max:.1f} kg) exceed MTOW−OEW "
+            f"({mtow - oew:.1f} kg); cannot form full-tank loading corner"
+        )
+
+    # (label, weight_kg, w_payload_kg, w_fuel_kg)
+    loading = [
+        ("OEW", oew, 0.0, 0.0),
+        ("OEW + payload", oew + w_payload, w_payload, 0.0),
+        ("Design MTOW", mtow, w_payload, w_fuel),
+        ("Full tanks @ MTOW", mtow, w_payload_full_tanks, w_fuel_max),
+        ("OEW + full tanks", oew + w_fuel_max, 0.0, w_fuel_max),
+    ]
+
+    points = []
+    for label, weight_kg, wp, wf in loading:
+        cg = get_cg(specs, w_fuel=wf, w_payload=wp)
+        points.append(
+            {
+                "label": label,
+                "weight_t": weight_kg / 1e3,
+                "cg_m": cg["CGx"] * 1e-3,
+                "w_payload_kg": wp,
+                "w_fuel_kg": wf,
+            }
+        )
+
+    # Close the loading polygon back to OEW for plotting.
+    plot_points = points + [points[0]]
+    cgs = [p["cg_m"] for p in plot_points]
+    weights = [p["weight_t"] for p in plot_points]
+
+    oew_t = oew / 1e3
+    mtow_t = mtow / 1e3
+    envelope_cg = [x_fwd_m, x_aft_m, x_aft_m, x_fwd_m, x_fwd_m]
+    envelope_w = [oew_t, oew_t, mtow_t, mtow_t, oew_t]
+
+    fig, ax = plt.subplots(figsize=(9.5, 5.8), layout="constrained")
+    ax.fill(
+        envelope_cg,
+        envelope_w,
+        color="#2a9d8f",
+        alpha=0.12,
+        zorder=1,
+        label="SM envelope",
+    )
+    ax.plot(
+        envelope_cg,
+        envelope_w,
+        color="#2a9d8f",
+        linewidth=1.6,
+        linestyle="--",
+        zorder=2,
+    )
+    ax.plot(
+        cgs,
+        weights,
+        color="#1f4e79",
+        linewidth=2.2,
+        marker="o",
+        markersize=7,
+        markerfacecolor="#f4a261",
+        markeredgecolor="#1f4e79",
+        markeredgewidth=1.4,
+        zorder=3,
+        label="Loading path",
+    )
+
+    label_offsets = [
+        (8, -22),
+        (8, 10),
+        (-100, 12),
+        (8, -28),
+        (-110, -8),
+    ]
+    for p, offset in zip(points, label_offsets):
+        ax.annotate(
+            f"{p['label']}\n{p['cg_m']:.2f} m, {p['weight_t']:.1f} t",
+            xy=(p["cg_m"], p["weight_t"]),
+            xytext=offset,
+            textcoords="offset points",
+            fontsize=8.5,
+            color="#274c77",
+            ha="left",
+            va="bottom",
+            bbox={
+                "boxstyle": "round,pad=0.25",
+                "facecolor": "white",
+                "edgecolor": "#c9d6e3",
+                "alpha": 0.92,
+            },
+            arrowprops={
+                "arrowstyle": "-",
+                "color": "#9bb0c4",
+                "lw": 0.8,
+            },
+            zorder=4,
+        )
+
+    ax.axvline(
+        x_fwd_m,
+        color="#e76f51",
+        linestyle=":",
+        linewidth=1.1,
+        alpha=0.9,
+        label=f"Fwd CG (SM={sm_max:.0%})",
+        zorder=2,
+    )
+    ax.axvline(
+        x_aft_m,
+        color="#e9c46a",
+        linestyle=":",
+        linewidth=1.1,
+        alpha=0.9,
+        label=f"Aft CG (SM={sm_min:.0%})",
+        zorder=2,
+    )
+
+    ax.set_xlabel("CG (m from nose)")
+    ax.set_ylabel("Weight (t)")
+    ax.set_title("Weight and Balance Diagram")
+    ax.grid(True, which="major", linestyle=":", linewidth=0.8, alpha=0.7)
+    ax.legend(loc="best", framealpha=0.95)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=160)
+    plt.close(fig)
+
+    return {
+        "envelope": {
+            "cg_fwd_m": x_fwd_m,
+            "cg_aft_m": x_aft_m,
+            "w_min_t": oew_t,
+            "w_max_t": mtow_t,
+            "sm_min": sm_min,
+            "sm_max": sm_max,
+            "np_m": np_mm * 1e-3,
+            "mac_m": mac_mm * 1e-3,
+        },
+        "points": points,
         "path": str(out_path),
     }
