@@ -92,7 +92,7 @@
                 "dihedral": 5.5
             },
             "mass": {
-                "weight": 5000,
+                "weight": 1000,
                 "CGx": 69311,
                 "CGy": 0,
                 "CGz": 1995,
@@ -117,7 +117,7 @@
                 "dihedral": 0
             },
             "mass": {
-                "weight": 3000,
+                "weight": 1000,
                 "CGx": 68992,
                 "CGy": 0,
                 "CGz": 7546,
