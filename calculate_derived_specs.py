@@ -13,16 +13,20 @@ from tools.weight_calc import (
     get_w_ij_loiter,
     get_w_ij_descent,
     get_w_ij_landing_shutdown,
+    write_payload_range_diagram,
 )
 from tools.lift_calc import get_lift_calcs
 
 ROOT = Path(__file__).resolve().parent
 SPECS_PATH = ROOT / "data" / "specs.json"
 DERIVED_SPECS_PATH = ROOT / "data" / "specs_derived.json"
+PAYLOAD_RANGE_PATH = ROOT / "data" / "payload_range.png"
+
 
 def calculate_derived_specs(
     specs_path=SPECS_PATH,
     out_path=DERIVED_SPECS_PATH,
+    payload_range_path=PAYLOAD_RANGE_PATH,
     use_raymer=False,
 ):
     with open(specs_path) as specs_file:
@@ -31,7 +35,7 @@ def calculate_derived_specs(
     # Initial guesses
     weight_calcs = {"mtow": 250e3}
     lift_calcs = {
-        "(c_L/c_D)_star": 20, 
+        "(c_L/c_D)_star": 20,
         "cruise_alt (ft)": 25e3,
     }
 
@@ -57,7 +61,7 @@ def calculate_derived_specs(
             use_raymer,
             MAX_ITERS,
         )
-        
+
         lift_calcs = get_lift_calcs(
             specs,
             e=OSTWALD_E,
@@ -65,11 +69,20 @@ def calculate_derived_specs(
             M_max_cruise=MAX_CRUISE_MACH,
             mtow=weight_calcs["mtow"],
         )
-    
+
+    w_fuel_max = specs["wings"]["ftank"]["mass"]["weight_max"]
+    payload_range = write_payload_range_diagram(
+        weight_calcs,
+        lift_calcs,
+        w_fuel_max=w_fuel_max,
+        out_path=payload_range_path,
+    )
+
     # Write derived specs to file
     derived_specs = {
         "weight_calcs": weight_calcs,
         "lift_calcs": lift_calcs,
+        "payload_range": payload_range,
     }
 
     with open(out_path, "w") as derived_specs_file:
@@ -92,3 +105,4 @@ if __name__ == "__main__":
 
     print(json.dumps(derived_specs, indent=4))
     print(f"Wrote {DERIVED_SPECS_PATH}")
+    print(f"Wrote {derived_specs['payload_range']['path']}")

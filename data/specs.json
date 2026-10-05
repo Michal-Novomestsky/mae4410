@@ -59,6 +59,7 @@
         },
         "ftank": {
             "mass": {
+                "weight_max": 100000,
                 "CGx": 36223,
                 "CGy": 0,
                 "CGz": -884
