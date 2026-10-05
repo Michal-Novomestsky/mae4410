@@ -5,16 +5,23 @@ from tools.isa import get_a
 from data.constants import *
 
 def _collect_mass_entries(node, path=(), manifest=None):
-    """Recursively collect component weights from mass sections."""
+    """Recursively collect mass section fields (weight, CGx/y/z) from specs."""
     if manifest is None:
         manifest = {}
     if not isinstance(node, dict):
         return manifest
 
     mass = node.get("mass")
-    if isinstance(mass, dict) and "weight" in mass:
-        component = ".".join(path) if path else "aircraft"
-        manifest[component] = mass["weight"]
+    if isinstance(mass, dict):
+        entry = {}
+        if "weight" in mass:
+            entry["weight"] = mass["weight"]
+        for axis in ("CGx", "CGy", "CGz"):
+            if axis in mass:
+                entry[axis] = mass[axis]
+        if entry:
+            component = ".".join(path) if path else "aircraft"
+            manifest[component] = entry
 
     for name, child in node.items():
         if name not in ("mass", "units"):
@@ -24,10 +31,57 @@ def _collect_mass_entries(node, path=(), manifest=None):
 
 def load_oew_from_specs(specs):
     """Return the summed OEW and component weight manifest."""
-    weight_manifest = _collect_mass_entries(specs)
+    mass_manifest = _collect_mass_entries(specs)
+    weight_manifest = {
+        component: entry["weight"]
+        for component, entry in mass_manifest.items()
+        if "weight" in entry
+    }
     if not weight_manifest:
         return None, {}
     return sum(weight_manifest.values()), weight_manifest
+
+def get_cg(specs, w_fuel=0.0):
+    """Mass-weighted CG from OEW components, with fuel placed at wings.ftank."""
+    mass_manifest = _collect_mass_entries(specs)
+    cg_axes = ("CGx", "CGy", "CGz")
+
+    moment = {axis: 0.0 for axis in cg_axes}
+    total_mass = 0.0
+
+    for component, entry in mass_manifest.items():
+        # Fuel tank is CG-only; its mass is applied later via w_fuel.
+        if component == "wings.ftank":
+            continue
+
+        missing = [field for field in ("weight", *cg_axes) if field not in entry]
+        if missing:
+            raise ValueError(
+                f"Mass entry '{component}' is missing required fields: {', '.join(missing)}"
+            )
+
+        weight = entry["weight"]
+        total_mass += weight
+        for axis in cg_axes:
+            moment[axis] += weight * entry[axis]
+
+    if w_fuel:
+        ftank = mass_manifest.get("wings.ftank")
+        if ftank is None:
+            raise ValueError("w_fuel > 0 but wings.ftank mass entry is missing from specs")
+        missing = [axis for axis in cg_axes if axis not in ftank]
+        if missing:
+            raise ValueError(
+                f"wings.ftank is missing required CG fields: {', '.join(missing)}"
+            )
+        total_mass += w_fuel
+        for axis in cg_axes:
+            moment[axis] += w_fuel * ftank[axis]
+
+    if total_mass == 0:
+        raise ValueError("No mass contributions available to compute CG")
+
+    return {axis: moment[axis] / total_mass for axis in cg_axes}
 
 # J. Roskam, Airplane Design: Preliminary sizing of airplanes, DARCorporation, 1985.
 def get_w_ij_warmup():
@@ -154,8 +208,12 @@ def get_weight_calcs(specs, specs_path, flight_profile, w_payload, safety_factor
     )
 
     flight_weights = get_flight_weights(flight_profile, mtow_chain["mtow"][-1])
+    cg = get_cg(specs, w_fuel=mtow_chain["w_fuel"][-1])
 
     weight_calcs = {
+        "CGx": cg["CGx"],
+        "CGy": cg["CGy"],
+        "CGz": cg["CGz"],
         "mtow": mtow_chain["mtow"][-1],
         "w_payload": mtow_chain["w_payload"][-1],
         "w_fuel": mtow_chain["w_fuel"][-1],

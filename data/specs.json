@@ -20,7 +20,9 @@
         },
         "mass": {
             "weight": 62955.3,
-            "CG": 35000,
+            "CGx": 35000,
+            "CGy": 0,
+            "CGz": 0,
             "Ixx": 0,
             "Iyy": 0,
             "Izz": 0
@@ -48,10 +50,18 @@
             "mass": {
                 "weight": 15000,
                 "CGx": 36223,
+                "CGy": 0,
                 "CGz": -884,
                 "Ixx": 0,
                 "Iyy": 0,
                 "Izz": 0
+            }
+        },
+        "ftank": {
+            "mass": {
+                "CGx": 36223,
+                "CGy": 0,
+                "CGz": -884
             }
         },
         "htail": {
@@ -72,6 +82,7 @@
             "mass": {
                 "weight": 5000,
                 "CGx": 69311,
+                "CGy": 0,
                 "CGz": 1995,
                 "Ixx": 0,
                 "Iyy": 0,
@@ -96,6 +107,7 @@
             "mass": {
                 "weight": 3000,
                 "CGx": 68992,
+                "CGy": 0,
                 "CGz": 7546,
                 "Ixx": 0,
                 "Iyy": 0,
@@ -114,8 +126,10 @@
             "oradius": 3900
         },
         "mass": {
-            "weight": 8000,
-            "CG": 0,
+            "weight": 16000,
+            "CGx": 0,
+            "CGy": 0,
+            "CGz": 0,
             "Ixx": 0,
             "Iyy": 0,
             "Izz": 0
