@@ -553,11 +553,12 @@ def loading_hull_boundary(
             f"({w_fuel_max:.1f} kg)"
         )
 
+    mtow_full_tanks = _state_point(specs, oew, w_payload_full, w_fuel_max)
+
     corners = [
         _state_point(specs, oew, 0.0, 0.0, "OEW"),
         _state_point(specs, oew, w_payload_max, 0.0, "OEW + payload"),
         _state_point(specs, oew, w_payload_max, w_fuel_design, "Design MTOW"),
-        _state_point(specs, oew, w_payload_full, w_fuel_max, "Full tanks @ MTOW"),
         _state_point(specs, oew, 0.0, w_fuel_max, "OEW + full tanks"),
     ]
 
@@ -567,7 +568,7 @@ def loading_hull_boundary(
         sample_mtow_trade(
             specs, oew, mtow, w_payload_max, w_payload_full, n_points
         ),
-        box_payload_edge(corners[3], corners[4]),
+        box_payload_edge(mtow_full_tanks, corners[3]),
         sample_tank_fill(specs, oew, 0.0, w_fuel_max, 0.0, n_points),
     ]
 
@@ -698,35 +699,30 @@ def write_weight_balance_diagram(
         zorder=2,
     )
 
-    # Loading hull H outline
+    # Loading hull H outline (dashed; certified fill sits on top inside E)
     ax.plot(
         h_cgs,
         h_ws,
-        color="#9bb0c4",
-        linewidth=1.4,
-        linestyle=":",
+        color="#1f4e79",
+        linewidth=1.6,
+        linestyle="--",
         zorder=3,
         label="Loading hull (H)",
     )
 
-    # Certified H ∩ E
+    # Certified H ∩ E (fill + edge only; no duplicate solid trace)
     if len(poly_cert) >= 3:
         cert_cgs = [p[0] for p in poly_cert] + [poly_cert[0][0]]
         cert_ws = [p[1] for p in poly_cert] + [poly_cert[0][1]]
         ax.fill(
             cert_cgs,
             cert_ws,
-            color="#1f4e79",
+            facecolor="#1f4e79",
+            edgecolor="#1f4e79",
             alpha=0.28,
+            linewidth=2.2,
             zorder=4,
             label=r"Certified (H $\cap$ E)",
-        )
-        ax.plot(
-            cert_cgs,
-            cert_ws,
-            color="#1f4e79",
-            linewidth=2.2,
-            zorder=5,
         )
 
     ax.plot(
@@ -745,7 +741,6 @@ def write_weight_balance_diagram(
         (8, -22),
         (8, 10),
         (-100, 12),
-        (8, -28),
         (-110, -8),
     ]
     for p, offset in zip(corners, label_offsets):

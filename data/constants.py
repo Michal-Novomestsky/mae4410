@@ -16,7 +16,7 @@ C_D0 = 0.0189 # https://discordapp.com/channels/1534147646871048272/153414820337
 
 # Static margin limits as fractions of MAC (forward = SM_MAX, aft = SM_MIN)
 SM_MIN = 0.05
-SM_MAX = 0.3
+SM_MAX = 0.15
 
 # Calculation hyperparams
 MAX_ITERS = 10
