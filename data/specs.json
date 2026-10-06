@@ -92,7 +92,7 @@
                 "dihedral": 5.5
             },
             "mass": {
-                "weight": 5000,
+                "weight": 1000,
                 "CGx": 69311,
                 "CGy": 0,
                 "CGz": 1995,
@@ -117,7 +117,7 @@
                 "dihedral": 0
             },
             "mass": {
-                "weight": 3000,
+                "weight": 1000,
                 "CGx": 68992,
                 "CGy": 0,
                 "CGz": 7546,
@@ -145,6 +145,16 @@
             "Ixx": 0,
             "Iyy": 0,
             "Izz": 0
+        }
+    },
+    "landing_gear": {
+        "nose": {
+            "CGx": 5100,
+            "load_frac_mtow": 0.08
+        },
+        "main": {
+            "CGx": 36600,
+            "load_frac_mtow": 0.92
         }
     }
 }

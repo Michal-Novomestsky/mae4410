@@ -455,6 +455,120 @@ def _cg_limits_m(np_mm, mac_mm, sm_min=SM_MIN, sm_max=SM_MAX):
     return x_fwd_m, x_aft_m
 
 
+def _landing_gear_params(specs, mtow):
+    """
+    Nose/main stations and R_n,min = f_n * MTOW (mass units; g cancels).
+
+    Returns (x_n_m, x_m_m, L_b_m, R_n_min_kg, f_n, f_m).
+    """
+    gear = specs.get("landing_gear")
+    if gear is None:
+        return None
+    nose = gear["nose"]
+    main = gear["main"]
+    x_n_m = nose["CGx"] * 1e-3
+    x_m_m = main["CGx"] * 1e-3
+    f_n = nose["load_frac_mtow"]
+    f_m = main["load_frac_mtow"]
+    L_b_m = x_m_m - x_n_m
+    if L_b_m <= 0:
+        raise ValueError(f"Landing-gear wheelbase must be > 0, got L_b={L_b_m} m")
+    R_n_min_kg = f_n * mtow
+    return x_n_m, x_m_m, L_b_m, R_n_min_kg, f_n, f_m
+
+
+def gear_aft_cg_m(weight_kg, x_m_m, L_b_m, R_n_min_kg):
+    """Aft CG for R_n >= R_n,min: x = x_m - (R_n,min / W) L_b."""
+    if weight_kg <= 0:
+        raise ValueError(f"weight_kg must be > 0, got {weight_kg}")
+    return x_m_m - (R_n_min_kg / weight_kg) * L_b_m
+
+
+def acceptable_envelope_polygon(
+    x_fwd_m,
+    x_aft_sm_m,
+    oew_t,
+    mtow_t,
+    gear_params=None,
+    n_aft=41,
+):
+    """
+    Acceptable envelope E as a closed polygon [(cg_m, weight_t), ...].
+
+    Forward: SM. Aft: min(SM, gear R_n,min curve) when gear_params given.
+    """
+    oew_kg = oew_t * 1e3
+    mtow_kg = mtow_t * 1e3
+
+    def aft_at(weight_kg):
+        x = x_aft_sm_m
+        if gear_params is not None:
+            _, x_m_m, L_b_m, R_n_min_kg, _, _ = gear_params
+            x = min(x, gear_aft_cg_m(weight_kg, x_m_m, L_b_m, R_n_min_kg))
+        return x
+
+    # CCW: bottom-left → bottom-right → up aft edge → top-left → close
+    poly = [(x_fwd_m, oew_t)]
+    for i in range(n_aft):
+        frac = i / (n_aft - 1)
+        w_kg = oew_kg + frac * (mtow_kg - oew_kg)
+        w_t = w_kg / 1e3
+        poly.append((aft_at(w_kg), w_t))
+    poly.append((x_fwd_m, mtow_t))
+    return poly
+
+
+def _clip_poly_to_convex(subject, clip):
+    """Sutherland–Hodgman clip of subject polygon to convex clip polygon."""
+
+    def _is_inside(p, a, b):
+        # Left of directed edge a→b (CCW clip means interior left).
+        return (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) >= -1e-12
+
+    def _intersect(p1, p2, a, b):
+        x1, y1 = p1
+        x2, y2 = p2
+        x3, y3 = a
+        x4, y4 = b
+        den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+        if abs(den) < 1e-15:
+            return p2
+        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+        return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+
+    out = list(subject)
+    for i in range(len(clip)):
+        if not out:
+            return []
+        a = clip[i]
+        b = clip[(i + 1) % len(clip)]
+        inp = out
+        out = []
+        s = inp[-1]
+        for e in inp:
+            e_in = _is_inside(e, a, b)
+            s_in = _is_inside(s, a, b)
+            if e_in:
+                if not s_in:
+                    out.append(_intersect(s, e, a, b))
+                out.append(e)
+            elif s_in:
+                out.append(_intersect(s, e, a, b))
+            s = e
+    return out
+
+
+def _clip_poly_to_rect(vertices, x_min, x_max, y_min, y_max):
+    """Sutherland–Hodgman clip of polygon [(x,y), ...] to axis-aligned rectangle."""
+    rect = [
+        (x_min, y_min),
+        (x_max, y_min),
+        (x_max, y_max),
+        (x_min, y_max),
+    ]
+    return _clip_poly_to_convex(vertices, rect)
+
+
 def _state_point(specs, oew, w_payload, w_fuel, label=None):
     """Single (CG, W) state from OEW + payload + fuel."""
     weight_kg = oew + w_payload + w_fuel
@@ -579,53 +693,6 @@ def loading_hull_boundary(
     return boundary, corners
 
 
-def _clip_poly_to_rect(vertices, x_min, x_max, y_min, y_max):
-    """Sutherland–Hodgman clip of polygon [(x,y), ...] to axis-aligned rectangle."""
-
-    def _inside(p, edge):
-        x, y = p
-        if edge == "left":
-            return x >= x_min
-        if edge == "right":
-            return x <= x_max
-        if edge == "bottom":
-            return y >= y_min
-        return y <= y_max  # top
-
-    def _intersect(p1, p2, edge):
-        x1, y1 = p1
-        x2, y2 = p2
-        dx, dy = x2 - x1, y2 - y1
-        if edge == "left":
-            t = (x_min - x1) / dx if dx != 0 else 0.0
-            return (x_min, y1 + t * dy)
-        if edge == "right":
-            t = (x_max - x1) / dx if dx != 0 else 0.0
-            return (x_max, y1 + t * dy)
-        if edge == "bottom":
-            t = (y_min - y1) / dy if dy != 0 else 0.0
-            return (x1 + t * dx, y_min)
-        t = (y_max - y1) / dy if dy != 0 else 0.0
-        return (x1 + t * dx, y_max)
-
-    out = list(vertices)
-    for edge in ("left", "right", "bottom", "top"):
-        if not out:
-            return []
-        inp = out
-        out = []
-        s = inp[-1]
-        for e in inp:
-            if _inside(e, edge):
-                if not _inside(s, edge):
-                    out.append(_intersect(s, e, edge))
-                out.append(e)
-            elif _inside(s, edge):
-                out.append(_intersect(s, e, edge))
-            s = e
-    return out
-
-
 def write_weight_balance_diagram(
     specs,
     weight_calcs,
@@ -639,7 +706,7 @@ def write_weight_balance_diagram(
     Weight–CG diagram: certified region H ∩ E.
 
     H  = loading hull (boxy payload edges + hyperbolic fuel fills), W≤MTOW
-    E  = SM envelope [OEW, MTOW] × [x_fwd, x_aft]
+    E  = SM band ∩ gear R_n,min aft limit (weight-dependent) × [OEW, MTOW]
 
     CG axis in metres from nose; weight axis in tonnes.
     """
@@ -651,7 +718,8 @@ def write_weight_balance_diagram(
     wing_geom = specs["wings"]["main"]["geometry"]
     np_mm = wing_geom["NP"]
     mac_mm = wing_geom["MAC"]
-    x_fwd_m, x_aft_m = _cg_limits_m(np_mm, mac_mm, sm_min=sm_min, sm_max=sm_max)
+    x_fwd_m, x_aft_sm_m = _cg_limits_m(np_mm, mac_mm, sm_min=sm_min, sm_max=sm_max)
+    gear_params = _landing_gear_params(specs, mtow)
 
     w_fuel_design = mtow - oew - w_payload
     if abs(w_fuel_design - w_fuel) > 1.0:
@@ -672,34 +740,42 @@ def write_weight_balance_diagram(
     oew_t = oew / 1e3
     mtow_t = mtow / 1e3
     poly_h = [(p["cg_m"], p["weight_t"]) for p in boundary_h]
-    poly_cert = _clip_poly_to_rect(poly_h, x_fwd_m, x_aft_m, oew_t, mtow_t)
+    poly_e = acceptable_envelope_polygon(
+        x_fwd_m,
+        x_aft_sm_m,
+        oew_t,
+        mtow_t,
+        gear_params=gear_params,
+        n_aft=n_boundary,
+    )
+    poly_cert = _clip_poly_to_convex(poly_h, poly_e)
 
-    envelope_cg = [x_fwd_m, x_aft_m, x_aft_m, x_fwd_m, x_fwd_m]
-    envelope_w = [oew_t, oew_t, mtow_t, mtow_t, oew_t]
+    e_cgs = [p[0] for p in poly_e] + [poly_e[0][0]]
+    e_ws = [p[1] for p in poly_e] + [poly_e[0][1]]
     h_cgs = [p[0] for p in poly_h] + [poly_h[0][0]]
     h_ws = [p[1] for p in poly_h] + [poly_h[0][1]]
 
     fig, ax = plt.subplots(figsize=(9.5, 5.8), layout="constrained")
 
-    # SM envelope E
+    # Acceptable envelope E (SM + optional gear aft)
     ax.fill(
-        envelope_cg,
-        envelope_w,
+        e_cgs,
+        e_ws,
         color="#2a9d8f",
         alpha=0.08,
         zorder=1,
-        label="SM envelope (E)",
+        label="Acceptable (E)",
     )
     ax.plot(
-        envelope_cg,
-        envelope_w,
+        e_cgs,
+        e_ws,
         color="#2a9d8f",
         linewidth=1.5,
         linestyle="--",
         zorder=2,
     )
 
-    # Loading hull H outline (dashed; certified fill sits on top inside E)
+    # Loading hull H outline
     ax.plot(
         h_cgs,
         h_ws,
@@ -710,7 +786,7 @@ def write_weight_balance_diagram(
         label="Loading hull (H)",
     )
 
-    # Certified H ∩ E (fill + edge only; no duplicate solid trace)
+    # Certified H ∩ E
     if len(poly_cert) >= 3:
         cert_cgs = [p[0] for p in poly_cert] + [poly_cert[0][0]]
         cert_ws = [p[1] for p in poly_cert] + [poly_cert[0][1]]
@@ -768,7 +844,24 @@ def write_weight_balance_diagram(
         )
 
     ax.axvline(x_fwd_m, color="#e76f51", linestyle=":", linewidth=1.1, alpha=0.9, zorder=2)
-    ax.axvline(x_aft_m, color="#e9c46a", linestyle=":", linewidth=1.1, alpha=0.9, zorder=2)
+    ax.axvline(x_aft_sm_m, color="#e9c46a", linestyle=":", linewidth=1.1, alpha=0.9, zorder=2)
+
+    if gear_params is not None:
+        _, x_m_m, L_b_m, R_n_min_kg, f_n, _ = gear_params
+        gear_ws = [oew_t + (mtow_t - oew_t) * i / (n_boundary - 1) for i in range(n_boundary)]
+        gear_xs = [
+            gear_aft_cg_m(w_t * 1e3, x_m_m, L_b_m, R_n_min_kg) for w_t in gear_ws
+        ]
+        ax.plot(
+            gear_xs,
+            gear_ws,
+            color="#9b2226",
+            linestyle=":",
+            linewidth=1.3,
+            alpha=0.9,
+            zorder=2,
+            label=rf"$R_{{n,\min}}$ aft ($f_n$={f_n:.0%})",
+        )
 
     ax.set_xlabel("CG (m from nose)")
     ax.set_ylabel("Weight (t)")
@@ -783,17 +876,31 @@ def write_weight_balance_diagram(
     fig.savefig(out_path, dpi=160)
     plt.close(fig)
 
+    envelope = {
+        "cg_fwd_m": x_fwd_m,
+        "cg_aft_sm_m": x_aft_sm_m,
+        "w_min_t": oew_t,
+        "w_max_t": mtow_t,
+        "sm_min": sm_min,
+        "sm_max": sm_max,
+        "np_m": np_mm * 1e-3,
+        "mac_m": mac_mm * 1e-3,
+    }
+    if gear_params is not None:
+        x_n_m, x_m_m, L_b_m, R_n_min_kg, f_n, f_m = gear_params
+        envelope["gear"] = {
+            "x_n_m": x_n_m,
+            "x_m_m": x_m_m,
+            "L_b_m": L_b_m,
+            "f_n": f_n,
+            "f_m": f_m,
+            "R_n_min_kg": R_n_min_kg,
+            "cg_aft_gear_oew_m": gear_aft_cg_m(oew, x_m_m, L_b_m, R_n_min_kg),
+            "cg_aft_gear_mtow_m": gear_aft_cg_m(mtow, x_m_m, L_b_m, R_n_min_kg),
+        }
+
     return {
-        "envelope": {
-            "cg_fwd_m": x_fwd_m,
-            "cg_aft_m": x_aft_m,
-            "w_min_t": oew_t,
-            "w_max_t": mtow_t,
-            "sm_min": sm_min,
-            "sm_max": sm_max,
-            "np_m": np_mm * 1e-3,
-            "mac_m": mac_mm * 1e-3,
-        },
+        "envelope": envelope,
         "points": corners,
         "certified": {
             "n_vertices": len(poly_cert),
