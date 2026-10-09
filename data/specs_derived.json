@@ -1,56 +1,134 @@
 {
     "weight_calcs": {
-        "mtow": 260707.96434765024,
+        "CGx": 36553.68871789644,
+        "CGy": 0.0,
+        "CGz": -273.44852364134675,
+        "mtow": 271104.9855897282,
         "w_payload": 79396,
-        "w_fuel": 82856.66434765025,
-        "oew": 98455.3,
-        "w_fuel_0": 0.31781408962697477,
-        "w_empty_0": 0.3776459236539138,
+        "w_fuel": 89753.68558972825,
+        "oew": 101955.3,
+        "w_fuel_0": 0.3310661565094024,
+        "w_empty_0": 0.3760731281950388,
         "eps": 0,
         "flight_breakdown": {
             "weights": {
-                "warmup": 258100.88470417375,
-                "taxi": 255519.875857132,
-                "takeoff": 254242.27647784632,
-                "climb": 249157.43094828937,
-                "cruise": 187750.52091023317,
-                "loiter": 185114.1001192634,
-                "descent": 183262.95911807075,
-                "landing and shutdown": 181796.8554451262
+                "warmup": 268393.93573383096,
+                "taxi": 265709.99637649267,
+                "takeoff": 264381.4463946102,
+                "climb": 259093.817466718,
+                "cruise": 191900.32879560793,
+                "loiter": 189012.3870031793,
+                "descent": 187122.2631331475,
+                "landing and shutdown": 185625.28502808232
             },
             "weight_fractions": {
                 "warmup": 0.99,
                 "taxi": 0.99,
                 "takeoff": 0.995,
                 "climb": 0.98,
-                "cruise": 0.7535417273956372,
-                "loiter": 0.9859578509919006,
+                "cruise": 0.7406596215683864,
+                "loiter": 0.9849508241567185,
                 "descent": 0.99,
                 "landing and shutdown": 0.992
             }
         },
         "oew_breakdown": {
-            "fuselage": 62955.3,
+            "fuselage.main": 62955.3,
             "wings.main": 15000,
-            "wings.htail": 3000,
-            "wings.vtail": 1500,
+            "wings.htail": 5000,
+            "wings.vtail": 3000,
             "engines": 16000
         }
     },
     "lift_calcs": {
-        "AR": 8.968,
-        "span": 64.4,
-        "S_wing": 462.4620874219448,
-        "wing_loading": 5530.280643128646,
-        "K": 0.04328532426728513,
+        "AR": 7.8,
+        "span": 60.0,
+        "S_wing": 461.53846153846155,
+        "wing_loading": 5762.336468709674,
+        "K": 0.04976702410628373,
         "e": 0.82,
         "c_D0": 0.0189,
-        "c_L_star": 0.6607855912576793,
+        "c_L_star": 0.6162544466156897,
         "c_D_star": 0.03780000000000001,
-        "(c_L/c_D)_star": 17.481100297822202,
-        "V_cruise": 256.48302157356,
+        "(c_L/c_D)_star": 16.303027688245756,
+        "V_cruise": 259.2207559149123,
         "M_cruise": 0.85,
-        "cruise_alt (ft)": 31095.700373091182,
-        "cruise_ceiling (ft)": 42575.38987962433
+        "cruise_alt (ft)": 28638.226214662736,
+        "cruise_ceiling (ft)": 40301.12658895128
+    },
+    "payload_range": {
+        "points": [
+            {
+                "label": "Zero range",
+                "range_km": 0.0,
+                "payload_t": 79.396
+            },
+            {
+                "label": "Harmonic",
+                "range_km": 8000.000000000039,
+                "payload_t": 79.396
+            },
+            {
+                "label": "Max range",
+                "range_km": 9439.043384231536,
+                "payload_t": 69.14968558972824
+            },
+            {
+                "label": "Ultimate",
+                "range_km": 14904.08309725612,
+                "payload_t": 0.0
+            }
+        ],
+        "path": "/home/michaln/git/mae4410/data/payload_range.png"
+    },
+    "weight_balance": {
+        "envelope": {
+            "cg_fwd_m": 36.46,
+            "cg_aft_m": 37.24,
+            "w_min_t": 101.95530000000001,
+            "w_max_t": 271.10498558972824,
+            "sm_min": 0.05,
+            "sm_max": 0.15,
+            "np_m": 37.63,
+            "mac_m": 7.8
+        },
+        "points": [
+            {
+                "weight_t": 101.95530000000001,
+                "cg_m": 38.0547112312945,
+                "w_payload_kg": 0.0,
+                "w_fuel_kg": 0.0,
+                "label": "OEW"
+            },
+            {
+                "weight_t": 181.35129999999998,
+                "cg_m": 36.71735190208176,
+                "w_payload_kg": 79396,
+                "w_fuel_kg": 0.0,
+                "label": "OEW + payload"
+            },
+            {
+                "weight_t": 271.10498558972824,
+                "cg_m": 36.55368871789644,
+                "w_payload_kg": 79396,
+                "w_fuel_kg": 89753.68558972824,
+                "label": "Design MTOW"
+            },
+            {
+                "weight_t": 201.9553,
+                "cg_m": 37.14772278816154,
+                "w_payload_kg": 0.0,
+                "w_fuel_kg": 100000,
+                "label": "OEW + full tanks"
+            }
+        ],
+        "certified": {
+            "n_vertices": 93,
+            "cg_min_m": 36.55368871789644,
+            "cg_max_m": 37.24,
+            "w_min_t": 101.95530000000001,
+            "w_max_t": 271.10498558972824
+        },
+        "path": "/home/michaln/git/mae4410/data/weight_balance.png"
     }
 }
