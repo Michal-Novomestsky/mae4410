@@ -426,7 +426,6 @@ def write_payload_range_diagram(
 
     ax.set_xlabel("Range (km)")
     ax.set_ylabel("Payload (t)")
-    ax.set_title("Payload–Range Diagram")
     ax.set_xlim(left=0)
     ax.set_ylim(bottom=0)
     ax.grid(True, which="major", linestyle=":", linewidth=0.8, alpha=0.7)
@@ -470,22 +469,6 @@ def _state_point(specs, oew, w_payload, w_fuel, label=None):
     return point
 
 
-def sample_tank_fill(specs, oew, w_payload, w_fuel_start, w_fuel_end, n_points=41):
-    """
-    CG vs weight while changing wing fuel at fixed payload.
-
-    With a single tank CG station:
-    x_CG(W) = x_f + W_ZFW (x_ZFW - x_f) / W
-    """
-    if n_points < 2:
-        raise ValueError(f"n_points must be >= 2, got {n_points}")
-    fuels = [
-        w_fuel_start + (w_fuel_end - w_fuel_start) * i / (n_points - 1)
-        for i in range(n_points)
-    ]
-    return [_state_point(specs, oew, w_payload, wf) for wf in fuels]
-
-
 def _box_corner(cg_m, weight_t):
     """Synthetic boundary point for rectilinear payload edges (not a load state)."""
     return {
@@ -507,33 +490,16 @@ def box_payload_edge(p_start, p_end):
     return [p_start, knee, p_end]
 
 
-def sample_mtow_trade(
-    specs, oew, mtow, w_payload_start, w_payload_end, n_points=41
-):
-    """Constant-MTOW edge: W_p + W_f = MTOW − OEW."""
-    if n_points < 2:
-        raise ValueError(f"n_points must be >= 2, got {n_points}")
-    samples = []
-    for i in range(n_points):
-        frac = i / (n_points - 1)
-        wp = w_payload_start + frac * (w_payload_end - w_payload_start)
-        wf = mtow - oew - wp
-        samples.append(_state_point(specs, oew, wp, wf))
-    return samples
-
-
-def loading_hull_boundary(
-    specs, oew, mtow, w_payload_max, w_fuel_max, n_points=41
-):
+def loading_hull_boundary(specs, oew, mtow, w_payload_max, w_fuel_max):
     """
     Closed boundary of loading hull H (conservative, certification-style).
 
-    Fuel edges: tank fill / drain (fixed tank CG). Payload edges: rectilinear
-    box steps between corner vertices (not single-station payload hyperbolas).
+    All edges are straight: payload edges use rectilinear box steps; fuel fill /
+    drain and the constant-MTOW trade connect corner vertices with lines.
 
     Walk from OEW:
-      ZFW box edge → max-payload tank fill → MTOW trade →
-      full-fuel box edge → zero-payload tank drain.
+      ZFW box edge → max-payload fuel line → MTOW trade →
+      full-fuel box edge → zero-payload fuel line.
     """
     w_fuel_design = mtow - oew - w_payload_max
     w_payload_full = mtow - oew - w_fuel_max
@@ -564,12 +530,10 @@ def loading_hull_boundary(
 
     segments = [
         box_payload_edge(corners[0], corners[1]),
-        sample_tank_fill(specs, oew, w_payload_max, 0.0, w_fuel_design, n_points),
-        sample_mtow_trade(
-            specs, oew, mtow, w_payload_max, w_payload_full, n_points
-        ),
+        [corners[1], corners[2]],
+        [corners[2], mtow_full_tanks],
         box_payload_edge(mtow_full_tanks, corners[3]),
-        sample_tank_fill(specs, oew, 0.0, w_fuel_max, 0.0, n_points),
+        [corners[3], corners[0]],
     ]
 
     boundary = []
@@ -577,7 +541,6 @@ def loading_hull_boundary(
         pts = seg if i == 0 else seg[1:]
         boundary.extend(pts)
     return boundary, corners
-
 
 def _clip_poly_to_rect(vertices, x_min, x_max, y_min, y_max):
     """Sutherland–Hodgman clip of polygon [(x,y), ...] to axis-aligned rectangle."""
@@ -633,12 +596,11 @@ def write_weight_balance_diagram(
     out_path,
     sm_min=SM_MIN,
     sm_max=SM_MAX,
-    n_boundary=41,
 ):
     """
-    Weight–CG diagram: certified region H ∩ E.
+    Weight–CG diagram: certified region H ∩ E only.
 
-    H  = loading hull (boxy payload edges + hyperbolic fuel fills), W≤MTOW
+    H  = loading hull (straight payload / fuel edges), W≤MTOW
     E  = SM envelope [OEW, MTOW] × [x_fwd, x_aft]
 
     CG axis in metres from nose; weight axis in tonnes.
@@ -666,7 +628,6 @@ def write_weight_balance_diagram(
         mtow,
         w_payload_max=w_payload,
         w_fuel_max=w_fuel_max,
-        n_points=n_boundary,
     )
 
     oew_t = oew / 1e3
@@ -674,43 +635,8 @@ def write_weight_balance_diagram(
     poly_h = [(p["cg_m"], p["weight_t"]) for p in boundary_h]
     poly_cert = _clip_poly_to_rect(poly_h, x_fwd_m, x_aft_m, oew_t, mtow_t)
 
-    envelope_cg = [x_fwd_m, x_aft_m, x_aft_m, x_fwd_m, x_fwd_m]
-    envelope_w = [oew_t, oew_t, mtow_t, mtow_t, oew_t]
-    h_cgs = [p[0] for p in poly_h] + [poly_h[0][0]]
-    h_ws = [p[1] for p in poly_h] + [poly_h[0][1]]
-
     fig, ax = plt.subplots(figsize=(9.5, 5.8), layout="constrained")
 
-    # SM envelope E
-    ax.fill(
-        envelope_cg,
-        envelope_w,
-        color="#2a9d8f",
-        alpha=0.08,
-        zorder=1,
-        label="SM envelope (E)",
-    )
-    ax.plot(
-        envelope_cg,
-        envelope_w,
-        color="#2a9d8f",
-        linewidth=1.5,
-        linestyle="--",
-        zorder=2,
-    )
-
-    # Loading hull H outline (dashed; certified fill sits on top inside E)
-    ax.plot(
-        h_cgs,
-        h_ws,
-        color="#1f4e79",
-        linewidth=1.6,
-        linestyle="--",
-        zorder=3,
-        label="Loading hull (H)",
-    )
-
-    # Certified H ∩ E (fill + edge only; no duplicate solid trace)
     if len(poly_cert) >= 3:
         cert_cgs = [p[0] for p in poly_cert] + [poly_cert[0][0]]
         cert_ws = [p[1] for p in poly_cert] + [poly_cert[0][1]]
@@ -722,12 +648,16 @@ def write_weight_balance_diagram(
             alpha=0.28,
             linewidth=2.2,
             zorder=4,
-            label=r"Certified (H $\cap$ E)",
         )
 
+    # Drop design corners outside the SM CG band (e.g. OEW aft of x_aft).
+    corners_in = [
+        p for p in corners if x_fwd_m <= p["cg_m"] <= x_aft_m
+    ]
+
     ax.plot(
-        [p["cg_m"] for p in corners],
-        [p["weight_t"] for p in corners],
+        [p["cg_m"] for p in corners_in],
+        [p["weight_t"] for p in corners_in],
         linestyle="None",
         marker="o",
         markersize=7,
@@ -737,17 +667,17 @@ def write_weight_balance_diagram(
         zorder=6,
     )
 
-    label_offsets = [
-        (8, -22),
-        (8, 10),
-        (-100, 12),
-        (-110, -8),
-    ]
-    for p, offset in zip(corners, label_offsets):
+    label_offsets = {
+        "OEW": (8, -22),
+        "OEW + payload": (8, 10),
+        "Design MTOW": (-100, 12),
+        "OEW + full tanks": (-110, -8),
+    }
+    for p in corners_in:
         ax.annotate(
             f"{p['label']}\n{p['cg_m']:.2f} m, {p['weight_t']:.1f} t",
             xy=(p["cg_m"], p["weight_t"]),
-            xytext=offset,
+            xytext=label_offsets.get(p["label"], (8, 10)),
             textcoords="offset points",
             fontsize=8.5,
             color="#274c77",
@@ -767,14 +697,9 @@ def write_weight_balance_diagram(
             zorder=7,
         )
 
-    ax.axvline(x_fwd_m, color="#e76f51", linestyle=":", linewidth=1.1, alpha=0.9, zorder=2)
-    ax.axvline(x_aft_m, color="#e9c46a", linestyle=":", linewidth=1.1, alpha=0.9, zorder=2)
-
     ax.set_xlabel("CG (m from nose)")
     ax.set_ylabel("Weight (t)")
-    ax.set_title("Weight and Balance Diagram")
     ax.grid(True, which="major", linestyle=":", linewidth=0.8, alpha=0.7)
-    ax.legend(loc="best", framealpha=0.95)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
@@ -794,7 +719,7 @@ def write_weight_balance_diagram(
             "np_m": np_mm * 1e-3,
             "mac_m": mac_mm * 1e-3,
         },
-        "points": corners,
+        "points": corners_in,
         "certified": {
             "n_vertices": len(poly_cert),
             "cg_min_m": min((p[0] for p in poly_cert), default=None),
