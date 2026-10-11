@@ -20,10 +20,9 @@
                 "oradius": 6200
             },
             "mass": {
-                "weight": 61916,
+                "weight": 62955.3,
                 "CGx": 35000,
                 "CGy": 0,
-                "CGz": 0,
                 "CGz": 0,
                 "Ixx": 0,
                 "Iyy": 0,
@@ -60,7 +59,7 @@
                 "NP": 37630
             },
             "mass": {
-                "weight": 69669,
+                "weight": 15000,
                 "CGx": 33781.82,
                 "CGy": 0,
                 "CGz": -339.02,
@@ -93,7 +92,7 @@
                 "dihedral": 5.5
             },
             "mass": {
-                "weight": 5000,
+                "weight": 3000,
                 "CGx": 64334.24,
                 "CGy": 0,
                 "CGz": 1910,
@@ -118,7 +117,7 @@
                 "dihedral": 0
             },
             "mass": {
-                "weight": 5000,
+                "weight": 1500,
                 "CGx": 65775.5,
                 "CGy": 0,
                 "CGz": 6489.7,

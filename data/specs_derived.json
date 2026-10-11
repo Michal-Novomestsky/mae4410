@@ -1,60 +1,60 @@
 {
     "weight_calcs": {
-        "CGx": 36553.68871789644,
+        "CGx": 35905.32113989793,
         "CGy": 0.0,
-        "CGz": -273.44852364134675,
-        "mtow": 271104.9855897282,
+        "CGz": -295.21396739316646,
+        "mtow": 262132.23591032703,
         "w_payload": 79396,
-        "w_fuel": 89753.68558972825,
-        "oew": 101955.3,
-        "w_fuel_0": 0.3310661565094024,
-        "w_empty_0": 0.3760731281950388,
+        "w_fuel": 83280.93591032703,
+        "oew": 99455.3,
+        "w_fuel_0": 0.3177058160020298,
+        "w_empty_0": 0.3794088874823573,
         "eps": 0,
         "flight_breakdown": {
             "weights": {
-                "warmup": 268393.93573383096,
-                "taxi": 265709.99637649267,
-                "takeoff": 264381.4463946102,
-                "climb": 259093.817466718,
-                "cruise": 191900.32879560793,
-                "loiter": 189012.3870031793,
-                "descent": 187122.2631331475,
-                "landing and shutdown": 185625.28502808232
+                "warmup": 259510.91355122376,
+                "taxi": 256915.80441571152,
+                "takeoff": 255631.22539363295,
+                "climb": 250518.6008857603,
+                "cruise": 188804.13496076126,
+                "loiter": 186152.91916429694,
+                "descent": 184291.38997265397,
+                "landing and shutdown": 182817.05885287272
             },
             "weight_fractions": {
                 "warmup": 0.99,
                 "taxi": 0.99,
                 "takeoff": 0.995,
                 "climb": 0.98,
-                "cruise": 0.7406596215683864,
-                "loiter": 0.9849508241567185,
+                "cruise": 0.7536531590596675,
+                "loiter": 0.9859578509919006,
                 "descent": 0.99,
                 "landing and shutdown": 0.992
             }
         },
         "oew_breakdown": {
-            "fuselage.main": 62955.3,
+            "fuselage.main": 63955.3,
             "wings.main": 15000,
-            "wings.htail": 5000,
-            "wings.vtail": 3000,
+            "wings.htail": 3000,
+            "wings.vtail": 1500,
             "engines": 16000
         }
     },
     "lift_calcs": {
-        "AR": 7.8,
-        "span": 60.0,
-        "S_wing": 461.53846153846155,
-        "wing_loading": 5762.336468709674,
-        "K": 0.04976702410628373,
+        "AR": 8.968,
+        "span": 64.4,
+        "S_wing": 462.4620874219448,
+        "wing_loading": 5560.493074395712,
+        "K": 0.04328532426728513,
         "e": 0.82,
         "c_D0": 0.0189,
-        "c_L_star": 0.6162544466156897,
+        "c_L_star": 0.6607855912576793,
         "c_D_star": 0.03780000000000001,
-        "(c_L/c_D)_star": 16.303027688245756,
-        "V_cruise": 259.2207559149123,
+        "(c_L/c_D)_star": 17.481100297822202,
+        "V_cruise": 256.61711672324765,
         "M_cruise": 0.85,
-        "cruise_alt (ft)": 28638.226214662736,
-        "cruise_ceiling (ft)": 40301.12658895128
+        "cruise_alt (ft)": 30975.332461511727,
+        "cruise_ceiling (ft)": 42469.42758369297
     },
     "payload_range": {
         "points": [
@@ -65,17 +65,17 @@
             },
             {
                 "label": "Harmonic",
-                "range_km": 8000.000000000039,
+                "range_km": 8000.000000000023,
                 "payload_t": 79.396
             },
             {
                 "label": "Max range",
-                "range_km": 9439.043384231536,
-                "payload_t": 69.14968558972824
+                "range_km": 10577.619086948102,
+                "payload_t": 62.67693591032701
             },
             {
                 "label": "Ultimate",
-                "range_km": 14904.08309725612,
+                "range_km": 16167.64647443101,
                 "payload_t": 0.0
             }
         ],
@@ -83,51 +83,51 @@
     },
     "weight_balance": {
         "envelope": {
-            "cg_fwd_m": 36.46,
-            "cg_aft_m": 37.24,
-            "w_min_t": 101.95530000000001,
-            "w_max_t": 271.10498558972824,
+            "cg_fwd_m": 36.457300000000004,
+            "cg_aft_m": 37.2391,
+            "w_min_t": 99.45530000000001,
+            "w_max_t": 262.13223591032704,
             "sm_min": 0.05,
             "sm_max": 0.15,
             "np_m": 37.63,
-            "mac_m": 7.8
+            "mac_m": 7.8180000000000005
         },
         "points": [
             {
-                "weight_t": 101.95530000000001,
-                "cg_m": 38.0547112312945,
+                "weight_t": 99.45530000000001,
+                "cg_m": 36.36203168659689,
                 "w_payload_kg": 0.0,
                 "w_fuel_kg": 0.0,
                 "label": "OEW"
             },
             {
-                "weight_t": 181.35129999999998,
-                "cg_m": 36.71735190208176,
+                "weight_t": 178.85129999999998,
+                "cg_m": 35.75739606030261,
                 "w_payload_kg": 79396,
                 "w_fuel_kg": 0.0,
                 "label": "OEW + payload"
             },
             {
-                "weight_t": 271.10498558972824,
-                "cg_m": 36.55368871789644,
+                "weight_t": 262.132235910327,
+                "cg_m": 35.90532113989793,
                 "w_payload_kg": 79396,
-                "w_fuel_kg": 89753.68558972824,
+                "w_fuel_kg": 83280.93591032701,
                 "label": "Design MTOW"
             },
             {
-                "weight_t": 201.9553,
-                "cg_m": 37.14772278816154,
+                "weight_t": 199.4553,
+                "cg_m": 36.29232599986062,
                 "w_payload_kg": 0.0,
                 "w_fuel_kg": 100000,
                 "label": "OEW + full tanks"
             }
         ],
         "certified": {
-            "n_vertices": 93,
-            "cg_min_m": 36.55368871789644,
-            "cg_max_m": 37.24,
-            "w_min_t": 101.95530000000001,
-            "w_max_t": 271.10498558972824
+            "n_vertices": 0,
+            "cg_min_m": null,
+            "cg_max_m": null,
+            "w_min_t": null,
+            "w_max_t": null
         },
         "path": "/home/michaln/git/mae4410/data/weight_balance.png"
     }
