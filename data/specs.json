@@ -15,16 +15,17 @@
                 "z": 0
             },
             "geometry": {
-                "length": 73000,
+                "length": 70000,
                 "iradius": 6000,
                 "oradius": 6200
             },
             "mass": {
-                "weight": 62955.3,
-                "CGx": 35000,
+                "weight": 61916,
+                "CGxx": 35000,
                 "CGy": 0,
                 "CGz": 0,
-                "Ixx": 0,
+                "CGz": 0,
+            "Ixx": 0,
                 "Iyy": 0,
                 "Izz": 0
             }
@@ -41,28 +42,28 @@
     "wings": {
         "main": {
             "position": {
-                "x": 25000,
+                "x": 22566,
                 "y": 2200,
-                "z": -1.5
+                "z": -1.639
             },
             "geometry": {
-                "span": 60000,
-                "MAC": 7800,
-                "AR": 7.8,
-                "rchord": 12300,
+                "span": 64400,
+                "MAC": 7818,
+                "AR": 8.968,
+                "rchord": 12888,
                 "tchord": 1000,
                 "sweep": 32,
                 "dihedral": 6,
-                "wtspan": 2330,
+                "wtspan": 2500,
                 "wtdihedral": 33.5,
-                "wtrchord": 2400,
+                "wtrchord": 2619,
                 "NP": 37630
             },
             "mass": {
-                "weight": 15000,
-                "CGx": 36223,
+                "weight": 12118,
+                "CGx": 33781.82,
                 "CGy": 0,
-                "CGz": -884,
+                "CGz": -339.02,
                 "Ixx": 0,
                 "Iyy": 0,
                 "Izz": 0
@@ -78,24 +79,24 @@
         },
         "htail": {
             "position": {
-                "x": 63500,
+                "x": 59508,
                 "y": 1300,
                 "z": 1.557
             },
             "geometry": {
-                "span": 22500,
-                "MAC": 5.28,
-                "AR": 4.7,
-                "rchord": 7500,
+                "span": 20546,
+                "MAC": 4612,
+                "AR": 4.2,
+                "rchord": 6440,
                 "tchord": 2010,
                 "sweep": 35,
                 "dihedral": 5.5
             },
             "mass": {
-                "weight": 5000,
-                "CGx": 69311,
+                "weight": 3063,
+                "CGx": 64334.24,
                 "CGy": 0,
-                "CGz": 1995,
+                "CGz": 1910,
                 "Ixx": 0,
                 "Iyy": 0,
                 "Izz": 0
@@ -103,24 +104,24 @@
         },
         "vtail": {
             "position": {
-                "x": 61298,
+                "x": 59331,
                 "y": 0,
                 "z": 2.651
             },
             "geometry": {
-                "span": 11500,
-                "MAC": 6200,
-                "AR": 2,
-                "rchord": 8500,
+                "span": 9152,
+                "MAC": 5788,
+                "AR": 1.7,
+                "rchord": 7800,
                 "tchord": 3100,
                 "sweep": 43,
                 "dihedral": 0
             },
             "mass": {
-                "weight": 3000,
-                "CGx": 68992,
+                "weight": 1397.5,
+                "CGx": 65775.5,
                 "CGy": 0,
-                "CGz": 7546,
+                "CGz": 6489.7,
                 "Ixx": 0,
                 "Iyy": 0,
                 "Izz": 0
@@ -129,13 +130,13 @@
     },
     "engines": {
         "position": {
-            "x": 25400,
+            "x": 23113,
             "y": 9300,
-            "z": -3090
+            "z": -2700
         },
         "geometry": {
             "length": 5600,
-            "oradius": 3900
+            "oradius": 3.772
         },
         "mass": {
             "weight": 16000,
