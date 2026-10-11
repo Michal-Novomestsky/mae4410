@@ -481,7 +481,7 @@ def _box_corner(cg_m, weight_t):
 
 def box_payload_edge(p_start, p_end):
     """
-    Rectilinear edge between two corner states (conservative payload bound).
+    One L of the axis-aligned rectangle with opposite corners p_start, p_end.
 
     Knee at (end CG, start weight): horizontal at start weight, then vertical
     at end CG (e.g. OEW → OEW+payload uses payload CG at OEW weight).
@@ -494,12 +494,13 @@ def loading_hull_boundary(specs, oew, mtow, w_payload_max, w_fuel_max):
     """
     Closed boundary of loading hull H (conservative, certification-style).
 
-    All edges are straight: payload edges use rectilinear box steps; fuel fill /
-    drain and the constant-MTOW trade connect corner vertices with lines.
+    OEW and OEW+payload are opposite corners of a ZFW payload rectangle; the
+    outer walk uses both L-paths (forward/bottom and aft/top). Fuel fill /
+    drain and the constant-MTOW trade are straight lines.
 
     Walk from OEW:
-      ZFW box edge → max-payload fuel line → MTOW trade →
-      full-fuel box edge → zero-payload fuel line.
+      ZFW box L → max-payload fuel line → MTOW trade →
+      full-fuel box edge → return via aft-top of ZFW rectangle.
     """
     w_fuel_design = mtow - oew - w_payload_max
     w_payload_full = mtow - oew - w_fuel_max
@@ -528,12 +529,17 @@ def loading_hull_boundary(specs, oew, mtow, w_payload_max, w_fuel_max):
         _state_point(specs, oew, 0.0, w_fuel_max, "OEW + full tanks"),
     ]
 
+    # Other opposite-corner knee of the ZFW rectangle: OEW CG at payload weight.
+    oew_cg_at_payload_w = _box_corner(
+        corners[0]["cg_m"], corners[1]["weight_t"]
+    )
+
     segments = [
         box_payload_edge(corners[0], corners[1]),
         [corners[1], corners[2]],
         [corners[2], mtow_full_tanks],
         box_payload_edge(mtow_full_tanks, corners[3]),
-        [corners[3], corners[0]],
+        [corners[3], oew_cg_at_payload_w, corners[0]],
     ]
 
     boundary = []
