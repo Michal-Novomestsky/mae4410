@@ -21,7 +21,7 @@
             },
             "mass": {
                 "weight": 62955.3,
-                "CGx": 35000,
+                "CGx": 36500,
                 "CGy": 0,
                 "CGz": 0,
                 "Ixx": 0,
@@ -32,7 +32,7 @@
         "payload": {
             "mass": {
                 "weight": 79396,
-                "CGx": 35000,
+                "CGx": 36500,
                 "CGy": 0,
                 "CGz": 0
             }
@@ -71,7 +71,7 @@
         "ftank": {
             "mass": {
                 "weight_max": 100000,
-                "CGx": 36223,
+                "CGx": 37023,
                 "CGy": 0,
                 "CGz": -884
             }
