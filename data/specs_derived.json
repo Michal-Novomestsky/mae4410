@@ -98,32 +98,40 @@
                 "cg_m": 37.152187033100304,
                 "w_payload_kg": 0.0,
                 "w_fuel_kg": 0.0,
-                "label": "OEW"
+                "label": "OEW",
+                "sm": 0.06111703337166771
             },
             {
                 "weight_t": 177.85129999999998,
                 "cg_m": 36.86103908152485,
                 "w_payload_kg": 79396,
                 "w_fuel_kg": 0.0,
-                "label": "OEW + payload"
+                "label": "OEW + payload",
+                "sm": 0.09835775370621025
             },
             {
                 "weight_t": 260.70796434765026,
                 "cg_m": 36.994769186062435,
                 "w_payload_kg": 79396,
                 "w_fuel_kg": 82856.66434765025,
-                "label": "Design MTOW"
+                "label": "Design MTOW",
+                "sm": 0.08125234253486414
             },
             {
                 "weight_t": 198.4553,
                 "cg_m": 37.21750802321732,
                 "w_payload_kg": 0.0,
                 "w_fuel_kg": 100000,
-                "label": "OEW + full tanks"
+                "label": "OEW + full tanks",
+                "sm": 0.052761828700778
             }
         ],
+        "sm_extrema": {
+            "OEW + payload": 0.09835775370621025,
+            "OEW + full tanks": 0.052761828700778
+        },
         "certified": {
-            "n_vertices": 9,
+            "n_vertices": 7,
             "cg_min_m": 36.86103908152485,
             "cg_max_m": 37.21750802321732,
             "w_min_t": 98.45530000000001,

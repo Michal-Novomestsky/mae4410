@@ -425,7 +425,7 @@ def write_payload_range_diagram(
     )
 
     ax.set_xlabel("Range (km)")
-    ax.set_ylabel("Payload (t)")
+    ax.set_ylabel("Payload (Metric Tonnes)")
     ax.set_xlim(left=0)
     ax.set_ylim(bottom=0)
     ax.grid(True, which="major", linestyle=":", linewidth=0.8, alpha=0.7)
@@ -452,6 +452,11 @@ def _cg_limits_m(np_mm, mac_mm, sm_min=SM_MIN, sm_max=SM_MAX):
     x_fwd_m = (np_mm - sm_max * mac_mm) * 1e-3
     x_aft_m = (np_mm - sm_min * mac_mm) * 1e-3
     return x_fwd_m, x_aft_m
+
+
+def _static_margin(cg_m, np_m, mac_m):
+    """Static margin as a fraction of MAC: (x_NP − x_CG) / MAC."""
+    return (np_m - cg_m) / mac_m
 
 
 def _state_point(specs, oew, w_payload, w_fuel, label=None):
@@ -494,22 +499,24 @@ def loading_hull_boundary(specs, oew, mtow, w_payload_max, w_fuel_max):
     """
     Closed boundary of loading hull H (conservative, certification-style).
 
-    OEW and OEW+payload are opposite corners of a ZFW payload rectangle; the
-    outer walk uses both L-paths (forward/bottom and aft/top). Fuel fill /
-    drain and the constant-MTOW trade are straight lines.
+    Fuel-loading edges are straight lines (CG ≈ linear with fuel mass):
+      OEW + payload ↔ Design MTOW
+      OEW ↔ OEW + full tanks
+
+    Payload-loading edges use axis-aligned L vertices (nontrivial CG path):
+      OEW ↔ OEW + payload
+      OEW + full tanks ↔ Design MTOW
 
     Walk from OEW:
-      ZFW box L → max-payload fuel line → MTOW trade →
-      full-fuel box edge → return via aft-top of ZFW rectangle.
+      payload L → max-payload fuel line → full-fuel payload L → zero-payload fuel line.
     """
     w_fuel_design = mtow - oew - w_payload_max
-    w_payload_full = mtow - oew - w_fuel_max
     if w_fuel_design < 0:
         raise ValueError(
             f"Design payload ({w_payload_max:.1f} kg) exceeds MTOW−OEW "
             f"({mtow - oew:.1f} kg)"
         )
-    if w_payload_full < 0:
+    if w_fuel_max > (mtow - oew) + 1e-6:
         raise ValueError(
             f"Full tanks ({w_fuel_max:.1f} kg) exceed MTOW−OEW "
             f"({mtow - oew:.1f} kg)"
@@ -520,8 +527,6 @@ def loading_hull_boundary(specs, oew, mtow, w_payload_max, w_fuel_max):
             f"({w_fuel_max:.1f} kg)"
         )
 
-    mtow_full_tanks = _state_point(specs, oew, w_payload_full, w_fuel_max)
-
     corners = [
         _state_point(specs, oew, 0.0, 0.0, "OEW"),
         _state_point(specs, oew, w_payload_max, 0.0, "OEW + payload"),
@@ -529,17 +534,11 @@ def loading_hull_boundary(specs, oew, mtow, w_payload_max, w_fuel_max):
         _state_point(specs, oew, 0.0, w_fuel_max, "OEW + full tanks"),
     ]
 
-    # Other opposite-corner knee of the ZFW rectangle: OEW CG at payload weight.
-    oew_cg_at_payload_w = _box_corner(
-        corners[0]["cg_m"], corners[1]["weight_t"]
-    )
-
     segments = [
-        box_payload_edge(corners[0], corners[1]),
-        [corners[1], corners[2]],
-        [corners[2], mtow_full_tanks],
-        box_payload_edge(mtow_full_tanks, corners[3]),
-        [corners[3], oew_cg_at_payload_w, corners[0]],
+        box_payload_edge(corners[0], corners[1]),  # OEW → OEW+payload (vertices)
+        [corners[1], corners[2]],                  # OEW+payload → Design MTOW (fuel line)
+        box_payload_edge(corners[2], corners[3]),  # Design MTOW → OEW+full tanks (vertices)
+        [corners[3], corners[0]],                  # OEW+full tanks → OEW (fuel line)
     ]
 
     boundary = []
@@ -606,7 +605,7 @@ def write_weight_balance_diagram(
     """
     Weight–CG diagram: certified region H ∩ E only.
 
-    H  = loading hull (straight payload / fuel edges), W≤MTOW
+    H  = loading hull (fuel lines + payload L-vertices), W≤MTOW
     E  = SM envelope [OEW, MTOW] × [x_fwd, x_aft]
 
     CG axis in metres from nose; weight axis in tonnes.
@@ -656,10 +655,21 @@ def write_weight_balance_diagram(
             zorder=4,
         )
 
+    np_m = np_mm * 1e-3
+    mac_m = mac_mm * 1e-3
+    for p in corners:
+        p["sm"] = _static_margin(p["cg_m"], np_m, mac_m)
+
     # Drop design corners outside the SM CG band (e.g. OEW aft of x_aft).
     corners_in = [
         p for p in corners if x_fwd_m <= p["cg_m"] <= x_aft_m
     ]
+    corners_by_label = {p["label"]: p for p in corners}
+    # Loading-hull CG extrema: most-forward (max SM) and most-aft (min SM).
+    sm_extrema = {
+        "OEW + payload": corners_by_label["OEW + payload"]["sm"],
+        "OEW + full tanks": corners_by_label["OEW + full tanks"]["sm"],
+    }
 
     ax.plot(
         [p["cg_m"] for p in corners_in],
@@ -703,8 +713,8 @@ def write_weight_balance_diagram(
             zorder=7,
         )
 
-    ax.set_xlabel("CG (m from nose)")
-    ax.set_ylabel("Weight (t)")
+    ax.set_xlabel("CG (m from Nose)")
+    ax.set_ylabel("Weight (Metric Tonnes)")
     ax.grid(True, which="major", linestyle=":", linewidth=0.8, alpha=0.7)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -722,10 +732,11 @@ def write_weight_balance_diagram(
             "w_max_t": mtow_t,
             "sm_min": sm_min,
             "sm_max": sm_max,
-            "np_m": np_mm * 1e-3,
-            "mac_m": mac_mm * 1e-3,
+            "np_m": np_m,
+            "mac_m": mac_m,
         },
         "points": corners_in,
+        "sm_extrema": sm_extrema,
         "certified": {
             "n_vertices": len(poly_cert),
             "cg_min_m": min((p[0] for p in poly_cert), default=None),
