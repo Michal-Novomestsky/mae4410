@@ -8,22 +8,34 @@
         "z0": "fuselage center"
     },
     "fuselage": {
-        "position": {
-            "x": 0,
-            "y": 0,
-            "z": 0
+        "main": {
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "geometry": {
+                "length": 73000,
+                "iradius": 6000,
+                "oradius": 6200
+            },
+            "mass": {
+                "weight": 62955.3,
+                "CGx": 36500,
+                "CGy": 0,
+                "CGz": 0,
+                "Ixx": 0,
+                "Iyy": 0,
+                "Izz": 0
+            }
         },
-        "geometry": {
-            "length": 70000,
-            "iradius": 6000,
-            "oradius": 6200
-        },
-        "mass": {
-            "weight": 62955.3,
-            "CG": 35000,
-            "Ixx": 0,
-            "Iyy": 0,
-            "Izz": 0
+        "payload": {
+            "mass": {
+                "weight": 79396,
+                "CGx": 36500,
+                "CGy": 0,
+                "CGz": 0
+            }
         }
     },
     "wings": {
@@ -43,14 +55,25 @@
                 "dihedral": 6,
                 "wtspan": 2500,
                 "wtdihedral": 33.5,
-                "wtrchord": 2619
+                "wtrchord": 2619,
+                "NP": 37630
             },
             "mass": {
                 "weight": 15000,
-                "CG": 0,
+                "CGx": 35781.82,
+                "CGy": 0,
+                "CGz": -339.02,
                 "Ixx": 0,
                 "Iyy": 0,
                 "Izz": 0
+            }
+        },
+        "ftank": {
+            "mass": {
+                "weight_max": 100000,
+                "CGx": 37281.82,
+                "CGy": 0,
+                "CGz": -884
             }
         },
         "htail": {
@@ -70,7 +93,9 @@
             },
             "mass": {
                 "weight": 3000,
-                "CG": 0,
+                "CGx": 64334.24,
+                "CGy": 0,
+                "CGz": 1910,
                 "Ixx": 0,
                 "Iyy": 0,
                 "Izz": 0
@@ -93,7 +118,9 @@
             },
             "mass": {
                 "weight": 1500,
-                "CG": 0,
+                "CGx": 65775.5,
+                "CGy": 0,
+                "CGz": 6489.7,
                 "Ixx": 0,
                 "Iyy": 0,
                 "Izz": 0
@@ -112,7 +139,9 @@
         },
         "mass": {
             "weight": 16000,
-            "CG": 0,
+            "CGx": 33223,
+            "CGy": 0,
+            "CGz": -884,
             "Ixx": 0,
             "Iyy": 0,
             "Izz": 0

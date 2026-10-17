@@ -1,5 +1,8 @@
 {
     "weight_calcs": {
+        "CGx": 36994.76918606243,
+        "CGy": 0.0,
+        "CGz": -295.3881423454754,
         "mtow": 260707.96434765024,
         "w_payload": 79396,
         "w_fuel": 82856.66434765025,
@@ -30,7 +33,7 @@
             }
         },
         "oew_breakdown": {
-            "fuselage": 62955.3,
+            "fuselage.main": 62955.3,
             "wings.main": 15000,
             "wings.htail": 3000,
             "wings.vtail": 1500,
@@ -52,5 +55,88 @@
         "M_cruise": 0.85,
         "cruise_alt (ft)": 31095.700373091182,
         "cruise_ceiling (ft)": 42575.38987962433
+    },
+    "payload_range": {
+        "points": [
+            {
+                "label": "Zero range",
+                "range_km": 0.0,
+                "payload_t": 79.396
+            },
+            {
+                "label": "Harmonic",
+                "range_km": 8000.000000000016,
+                "payload_t": 79.396
+            },
+            {
+                "label": "Max range",
+                "range_km": 10660.366038616252,
+                "payload_t": 62.25266434765025
+            },
+            {
+                "label": "Ultimate",
+                "range_km": 16289.68249630795,
+                "payload_t": 0.0
+            }
+        ],
+        "path": "/home/michaln/Michal_Linux/git/mae4410/data/payload_range.png"
+    },
+    "weight_balance": {
+        "envelope": {
+            "cg_fwd_m": 36.457300000000004,
+            "cg_aft_m": 37.2391,
+            "w_min_t": 98.45530000000001,
+            "w_max_t": 260.70796434765026,
+            "sm_min": 0.05,
+            "sm_max": 0.15,
+            "np_m": 37.63,
+            "mac_m": 7.8180000000000005
+        },
+        "points": [
+            {
+                "weight_t": 98.45530000000001,
+                "cg_m": 37.152187033100304,
+                "w_payload_kg": 0.0,
+                "w_fuel_kg": 0.0,
+                "label": "OEW",
+                "sm": 0.06111703337166771
+            },
+            {
+                "weight_t": 177.85129999999998,
+                "cg_m": 36.86103908152485,
+                "w_payload_kg": 79396,
+                "w_fuel_kg": 0.0,
+                "label": "OEW + payload",
+                "sm": 0.09835775370621025
+            },
+            {
+                "weight_t": 260.70796434765026,
+                "cg_m": 36.994769186062435,
+                "w_payload_kg": 79396,
+                "w_fuel_kg": 82856.66434765025,
+                "label": "Design MTOW",
+                "sm": 0.08125234253486414
+            },
+            {
+                "weight_t": 198.4553,
+                "cg_m": 37.21750802321732,
+                "w_payload_kg": 0.0,
+                "w_fuel_kg": 100000,
+                "label": "OEW + full tanks",
+                "sm": 0.052761828700778
+            }
+        ],
+        "sm_extrema": {
+            "OEW + payload": 0.09835775370621025,
+            "OEW + full tanks": 0.052761828700778
+        },
+        "certified": {
+            "n_vertices": 7,
+            "cg_min_m": 36.86103908152485,
+            "cg_max_m": 37.21750802321732,
+            "w_min_t": 98.45530000000001,
+            "w_max_t": 260.70796434765026
+        },
+        "path": "/home/michaln/Michal_Linux/git/mae4410/data/weight_balance.png"
     }
 }
